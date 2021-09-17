@@ -1,0 +1,43 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="PDF_ToolBox.Views.ToolMergePage"
+             xmlns:local="clr-namespace:PDF_ToolBox.ViewModels"  
+             Title="Merge PDF">
+    <ContentPage.BindingContext>
+        <local:ToolMergeViewModel/>
+    </ContentPage.BindingContext>
+    <ContentPage.Content>
+
+        <ScrollView VerticalScrollBarVisibility="Default">
+            <StackLayout Padding="10">
+
+                <Entry Text="{Binding OutputPdfFile}" Placeholder="Output Pdf File Name" HorizontalOptions="FillAndExpand" />
+
+                <Button Text="Select PDF File" Command="{Binding AddItemCommand}" HorizontalOptions="FillAndExpand" />
+
+                <Label Text="Files:" HorizontalOptions="StartAndExpand" FontAttributes="Bold" FontSize="Medium" />
+
+                <CollectionView x:Name="ItemsListView" ItemsSource="{Binding Items}" SelectionMode="None">
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate>
+                            <StackLayout Padding="10" Orientation="Horizontal">
+                                <Label Text="{Binding FileName}" LineBreakMode="NoWrap" FontSize="Medium" FontAttributes="Bold" TextColor="CadetBlue" />
+
+                                <StackLayout.GestureRecognizers>
+                                    <TapGestureRecognizer NumberOfTapsRequired="1"
+                                Command="{Binding Source={RelativeSource AncestorType={x:Type local:ToolMergeViewModel}}, Path=ItemTapped}"		
+                                CommandParameter="{Binding .}">
+                                    </TapGestureRecognizer>
+                                </StackLayout.GestureRecognizers>
+                            </StackLayout>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+
+                <Button Text="Merge PDF" Command="{Binding MergeItemsCommand}" HorizontalOptions="FillAndExpand" />
+            </StackLayout>
+        </ScrollView>
+        
+    </ContentPage.Content>
+</ContentPage>

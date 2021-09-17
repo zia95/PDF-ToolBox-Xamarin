@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<pages:PopupPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:pages="clr-namespace:Rg.Plugins.Popup.Pages;assembly=Rg.Plugins.Popup"
+             xmlns:local="clr-namespace:PDF_ToolBox.Views"
+             x:Class="PDF_ToolBox.Views.InputPopup">
+
+    <StackLayout Margin="12" Spacing="24" Padding="24" Orientation="Vertical" VerticalOptions="Center" HorizontalOptions="FillAndExpand" BackgroundColor="GhostWhite">
+
+        <Label Text="{Binding Message}" FontSize="Medium" />
+        <Entry Text="{Binding Input}" Placeholder="{Binding InputPlaceholder}" FontSize="Small" Keyboard="{Binding InputKeyboard}" HorizontalOptions="FillAndExpand"/>
+        <StackLayout Orientation="Horizontal">
+            <Button Text="{Binding Cancel}" Clicked="OnCancelClicked" BackgroundColor="Red" HorizontalOptions="StartAndExpand" />
+            <Button Text="{Binding Accept}" IsVisible="{Binding ShowAccept}" x:Name="btn_accept" HorizontalOptions="EndAndExpand" Clicked="OnAcceptClicked" />
+        </StackLayout>
+
+    </StackLayout>
+    
+</pages:PopupPage>

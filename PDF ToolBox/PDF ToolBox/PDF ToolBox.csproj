@@ -1,0 +1,75 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <ProduceReferenceAssembly>true</ProduceReferenceAssembly>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Resources\Images\banner.png" />
+    <None Remove="Resources\Images\test_128x128.png" />
+    <None Remove="Resources\Images\tool_compress.png" />
+    <None Remove="Resources\Images\tool_lock.png" />
+    <None Remove="Resources\Images\tool_merge.png" />
+    <None Remove="Resources\Images\tool_remove.png" />
+    <None Remove="Resources\Images\tool_savedpdfs.png" />
+    <None Remove="Resources\Images\tool_split.png" />
+    <None Remove="Resources\Images\tool_unlock.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\Images\banner.png" />
+    <EmbeddedResource Include="Resources\Images\test_128x128.png" />
+    <EmbeddedResource Include="Resources\Images\tool_compress.png" />
+    <EmbeddedResource Include="Resources\Images\tool_lock.png" />
+    <EmbeddedResource Include="Resources\Images\tool_merge.png" />
+    <EmbeddedResource Include="Resources\Images\tool_remove.png" />
+    <EmbeddedResource Include="Resources\Images\tool_savedpdfs.png" />
+    <EmbeddedResource Include="Resources\Images\tool_split.png" />
+    <EmbeddedResource Include="Resources\Images\tool_unlock.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="PDFsharpNetStandard2" Version="1.51.4845" />
+    <PackageReference Include="Plugin.FirebaseCrashlytics" Version="4.1.0" />
+    <PackageReference Include="Rg.Plugins.Popup" Version="2.0.0.12" />
+    <PackageReference Include="Xamarin.Forms" Version="5.0.0.2083" />  
+    <PackageReference Include="Xamarin.Essentials" Version="1.7.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Properties\Resources.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Views\ToolsPage.xaml.cs">
+      <DependentUpon>ToolsPage.xaml</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Views\GeneratedPdfListPage.xaml">
+      <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Views\InputPopup.xaml">
+      <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Views\MessagePopup.xaml">
+      <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Views\PdfTaskExecutorPopup.xaml">
+      <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Views\ToolMergePage.xaml">
+      <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Views\ToolSplitPage.xaml">
+      <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
+    </EmbeddedResource>
+  </ItemGroup>
+</Project>

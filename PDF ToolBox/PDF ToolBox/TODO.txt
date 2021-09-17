@@ -1,0 +1,7 @@
+﻿1. pdf list swipeview...DONE
+2. split tool page ui binding...DONE
+3. pdf list scroll to item doesnt work as intended..
+4. add other tools...
+5. split tool ranges doest check if fromidx>toidx.....done
+6. add scroll func. to tools......done
+7. about banner doesnt fill screen...done

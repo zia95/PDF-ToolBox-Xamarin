@@ -1,0 +1,64 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="PDF_ToolBox.Views.GeneratedPdfListPage"
+             xmlns:local="clr-namespace:PDF_ToolBox.ViewModels"  
+             xmlns:model="clr-namespace:PDF_ToolBox.Models"  
+             Title="Pdf List" >
+    
+    <ContentPage.ToolbarItems>
+        <ToolbarItem Text="Merge" Command="{Binding MergePdfListCommand}" />
+        <ToolbarItem Text="Split" Command="{Binding SplitPdfListCommand}" />
+        <ToolbarItem Text="Security" Command="{Binding SecurityPdfListCommand}" />
+    </ContentPage.ToolbarItems>
+
+    <!--
+      x:DataType enables compiled bindings for better performance and compile time validation of binding expressions.
+      https://docs.microsoft.com/xamarin/xamarin-forms/app-fundamentals/data-binding/compiled-bindings
+    -->
+    <RefreshView x:DataType="local:GeneratedPdfListViewModel" Command="{Binding LoadItemsCommand}" IsRefreshing="{Binding IsBusy, Mode=TwoWay}">
+        <CollectionView x:Name="ItemsListView"
+                ItemsSource="{Binding Items}"
+                SelectionMode="Single" SelectedItem="{Binding SelectedItem}">
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <SwipeView>
+
+                        <SwipeView.RightItems>
+                            <SwipeItems>
+                                <SwipeItem Text="Delete"
+                                           Command="{Binding Source={RelativeSource AncestorType={x:Type local:GeneratedPdfListViewModel}}, Path=DeletePdfCommand}" 
+                                           CommandParameter="{Binding Source={RelativeSource AncestorType={x:Type model:PdfFile}}}" BackgroundColor="Red" />
+                            </SwipeItems>
+                            
+                        </SwipeView.RightItems>
+
+                        <StackLayout Padding="10" Orientation="Horizontal" BackgroundColor="{Binding ItemColor}" x:DataType="model:PdfFile">
+
+
+
+
+                            <StackLayout >
+                                <Label Text="{Binding FileName}" LineBreakMode="NoWrap" Style="{DynamicResource ListItemTextStyle}" FontSize="Medium" FontAttributes="Bold" TextColor="CadetBlue" />
+
+
+                                <Label x:Name="itemtemp" Text="{Binding  RelativePath}" LineBreakMode="NoWrap" HorizontalOptions="StartAndExpand" Style="{DynamicResource ListItemDetailTextStyle}" FontSize="Small" />
+                            </StackLayout>
+
+                            
+
+                            <StackLayout.GestureRecognizers>
+                                <TapGestureRecognizer 
+                                NumberOfTapsRequired="1"
+                                Command="{Binding Source={RelativeSource AncestorType={x:Type local:GeneratedPdfListViewModel}}, Path=ItemTapped}"		
+                                CommandParameter="{Binding .}">
+                                </TapGestureRecognizer>
+                            </StackLayout.GestureRecognizers>
+                        </StackLayout>
+                    </SwipeView>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+    </RefreshView>
+    
+</ContentPage>

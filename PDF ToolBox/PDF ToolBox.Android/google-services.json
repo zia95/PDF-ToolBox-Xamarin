@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "1031085190702",
+    "project_id": "pdftoolbox-e3dc8",
+    "storage_bucket": "pdftoolbox-e3dc8.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1031085190702:android:fc3257da4b50560fa3f9bf",
+        "android_client_info": {
+          "package_name": "com.x2byteapps.pdf_toolbox"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1031085190702-4t7qn8lgs0djev97k861plamctd1rea5.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBVPj7j0FDuvzsk4NxsmjeyRHjMoUSozUM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1031085190702-4t7qn8lgs0djev97k861plamctd1rea5.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
