@@ -18,7 +18,7 @@
 
                 <Label Text="Files:" HorizontalOptions="StartAndExpand" FontAttributes="Bold" FontSize="Medium" />
 
-                <CollectionView x:Name="ItemsListView" ItemsSource="{Binding Items}" SelectionMode="None">
+                <CollectionView x:Name="ItemsListView" ItemsSource="{Binding Items}" HeightRequest="200" SelectionMode="None">
                     <CollectionView.ItemTemplate>
                         <DataTemplate>
                             <StackLayout Padding="10" Orientation="Horizontal">
