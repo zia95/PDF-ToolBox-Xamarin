@@ -22,7 +22,7 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
         <StackLayout VerticalOptions="FillAndExpand" HorizontalOptions="Fill">
-            <ContentView Padding="10,10,10,10" VerticalOptions="FillAndExpand">
+            <ContentView Padding="10,30,10,10" VerticalOptions="FillAndExpand" BackgroundColor="AliceBlue">
                 <Image Source="{extension:ImageResource  PDF_ToolBox.Resources.Images.banner.png}" Aspect="AspectFit" VerticalOptions="FillAndExpand" />
             </ContentView>
         </StackLayout>

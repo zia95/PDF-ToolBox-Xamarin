@@ -7,26 +7,32 @@
 
   <ItemGroup>
     <None Remove="Resources\Images\banner.png" />
-    <None Remove="Resources\Images\test_128x128.png" />
+    <None Remove="Resources\Images\icon.png" />
     <None Remove="Resources\Images\tool_compress.png" />
+    <None Remove="Resources\Images\tool_imagestopdf.png" />
     <None Remove="Resources\Images\tool_lock.png" />
     <None Remove="Resources\Images\tool_merge.png" />
     <None Remove="Resources\Images\tool_remove.png" />
     <None Remove="Resources\Images\tool_savedpdfs.png" />
     <None Remove="Resources\Images\tool_split.png" />
     <None Remove="Resources\Images\tool_unlock.png" />
+    <None Remove="Resources\Images\tool_viewinformation.png" />
+    <None Remove="Resources\Images\tool_watermark.png" />
   </ItemGroup>
 
   <ItemGroup>
     <EmbeddedResource Include="Resources\Images\banner.png" />
-    <EmbeddedResource Include="Resources\Images\test_128x128.png" />
+    <EmbeddedResource Include="Resources\Images\icon.png" />
     <EmbeddedResource Include="Resources\Images\tool_compress.png" />
+    <EmbeddedResource Include="Resources\Images\tool_imagestopdf.png" />
     <EmbeddedResource Include="Resources\Images\tool_lock.png" />
     <EmbeddedResource Include="Resources\Images\tool_merge.png" />
     <EmbeddedResource Include="Resources\Images\tool_remove.png" />
     <EmbeddedResource Include="Resources\Images\tool_savedpdfs.png" />
     <EmbeddedResource Include="Resources\Images\tool_split.png" />
     <EmbeddedResource Include="Resources\Images\tool_unlock.png" />
+    <EmbeddedResource Include="Resources\Images\tool_viewinformation.png" />
+    <EmbeddedResource Include="Resources\Images\tool_watermark.png" />
   </ItemGroup>
 
   <ItemGroup>

@@ -14,6 +14,8 @@ namespace PDF_ToolBox.Models
             Unlock,
             Watermark,
             Compress,
+            ImagesToPdf,
+            ViewInformation,
         }
         public Ids Id { get; set; }
         public Xamarin.Forms.ImageSource Image { get; set; }

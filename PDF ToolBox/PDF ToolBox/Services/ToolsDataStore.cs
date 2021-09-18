@@ -21,8 +21,10 @@ namespace PDF_ToolBox.Services
                 new Tools { Id = Tools.Ids.RemovePage, Image = ImageSource.FromResource("PDF_ToolBox.Resources.Images.tool_remove.png", typeof(ToolsDataStore).Assembly), Text = "Remove Page(s)", Description="Remove pages from pdf file." },
                 new Tools { Id = Tools.Ids.Lock, Image = ImageSource.FromResource("PDF_ToolBox.Resources.Images.tool_lock.png", typeof(ToolsDataStore).Assembly), Text = "Lock", Description="Lock pdf file." },
                 new Tools { Id = Tools.Ids.Unlock, Image = ImageSource.FromResource("PDF_ToolBox.Resources.Images.tool_unlock.png", typeof(ToolsDataStore).Assembly), Text = "Unlock", Description="Remove password from pdf file." },
-                new Tools { Id = Tools.Ids.Watermark, Image = ImageSource.FromResource("PDF_ToolBox.Resources.Images.tool_compress.png", typeof(ToolsDataStore).Assembly), Text = "Watermark", Description="Add watermark on pdf file." },
-                new Tools { Id = Tools.Ids.Compress, Image = ImageSource.FromResource("PDF_ToolBox.Resources.Images.tool_compress.png", typeof(ToolsDataStore).Assembly), Text = "Compress", Description="Compress pdf file." }
+                new Tools { Id = Tools.Ids.Watermark, Image = ImageSource.FromResource("PDF_ToolBox.Resources.Images.tool_watermark.png", typeof(ToolsDataStore).Assembly), Text = "Watermark", Description="Add watermark on pdf file." },
+                new Tools { Id = Tools.Ids.Compress, Image = ImageSource.FromResource("PDF_ToolBox.Resources.Images.tool_compress.png", typeof(ToolsDataStore).Assembly), Text = "Compress", Description="Compress pdf file." },
+                new Tools { Id = Tools.Ids.ImagesToPdf, Image = ImageSource.FromResource("PDF_ToolBox.Resources.Images.tool_imagestopdf.png", typeof(ToolsDataStore).Assembly), Text = "Images To Pdf", Description="Generate pdf file from images." },
+                new Tools { Id = Tools.Ids.ViewInformation, Image = ImageSource.FromResource("PDF_ToolBox.Resources.Images.tool_viewinformation.png", typeof(ToolsDataStore).Assembly), Text = "View Info", Description="View or Edit pdf information." }
             };
         }
 
