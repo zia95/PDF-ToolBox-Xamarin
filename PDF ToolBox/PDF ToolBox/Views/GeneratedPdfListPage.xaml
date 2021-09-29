@@ -9,7 +9,7 @@
     <ContentPage.ToolbarItems>
         <ToolbarItem Text="Merge" Command="{Binding MergePdfListCommand}" />
         <ToolbarItem Text="Split" Command="{Binding SplitPdfListCommand}" />
-        <ToolbarItem Text="Security" Command="{Binding SecurityPdfListCommand}" />
+        <ToolbarItem Text="Other" Command="{Binding OtherPdfListCommand}" />
     </ContentPage.ToolbarItems>
 
     <!--

@@ -6,6 +6,7 @@ using PdfSharp.Pdf;
 using PdfSharp.Pdf.IO;
 using PdfSharp.Pdf.Security;
 
+using System.Linq;
 
 using System.Drawing;
 using PdfSharp.Fonts;
@@ -144,6 +145,8 @@ namespace PDF_ToolBox.PDF
         {
             CrashReporting.Log($"In SplitPDFAsync({infile}, {outfile}, {merge}, <{ranges?.Length}>, {tracker != null})");
 
+            if (outfile != null)
+                outfile = Path.Combine(FileSystem.GetSplitPdfOutDir(), outfile);
 
             // Open the file
             PdfProgressEventArgs e_progress = new PdfProgressEventArgs();
@@ -301,7 +304,131 @@ namespace PDF_ToolBox.PDF
             return await Task.FromResult(true);
         }
 
+        /// <summary>
+        /// Remove pages from pdf file
+        /// </summary>
+        /// <param name="infile">input pdf file</param>
+        /// <param name="outfile">output pdf file which going to be saved in disk in case ranges are to be merged. Otherwise this must be a directory where all pdf files will be created.</param>
+        /// <param name="ranges">ranges to extract from pdf file</param>
+        /// <param name="tracker">this event will be called each time change in progress happens</param>
+        /// <returns>removeing pages from document was sucessful or not</returns>
+        public static async Task<bool> RemovePagesFromPDFAsync(string infile, string outfile, PageRange[] ranges, PdfProgressHandler tracker)
+        {
+            CrashReporting.Log($"In RemovePagesFromPDFAsync({infile}, {outfile}, <{ranges?.Length}>, {tracker != null})");
 
+            if (outfile != null)
+                outfile = Path.Combine(FileSystem.GetOtherPdfOutDir(), outfile);
+
+            // Open the file
+            PdfProgressEventArgs e_progress = new PdfProgressEventArgs();
+
+            CrashReporting.Log("RemovePages-> Opening input pdf.");
+
+            PdfDocument doc;
+            try
+            {
+                doc = PdfReader.Open(infile, PdfDocumentOpenMode.Import);
+            }
+            catch (PdfSharp.Pdf.IO.PdfReaderException ex)
+            {
+                CrashReporting.Log("RemovePages-> Exception while opening input pdf.");
+                tracker?.Invoke(null, e_progress.Failed($"InternalError: {ex.Message}."));
+                return await Task.FromResult(false);
+            }
+            if (doc == null)
+            {
+                CrashReporting.Log("RemovePages-> While opening input pdf doc retured <null>.");
+                tracker?.Invoke(null, e_progress.Failed($"Doc object <null>."));
+                return await Task.FromResult(false);
+            }
+
+            CrashReporting.Log("RemovePages-> Checking ranges are out of range or invalid.");
+            //check ranges are not out of bound before remove pages begins
+            int pgcount = doc.PageCount;
+            e_progress.TotalPages = pgcount;
+            for (int i = 0; i < ranges.Length; i++)
+            {
+                int from_idx = ranges[i].From - 1;
+                int to_idx = ranges[i].To;
+
+                if (from_idx >= to_idx || to_idx > pgcount)
+                {
+                    doc.Close();
+                    e_progress.Failed($"Failed because range '{ranges[i]}' is not valid. Make sure ranges are valid. Note that the document page count is '{pgcount}'.");
+                    tracker?.Invoke(null, e_progress);
+                    return await Task.FromResult(false);
+                }
+            }
+
+            PdfDocument outputDocument = new PdfDocument();
+
+            outputDocument.Version = doc.Version;
+            outputDocument.Info.Title = doc.Info.Title;
+            outputDocument.Info.Creator = doc.Info.Creator;
+
+            CrashReporting.Log("RemovePages-> In pdf removing pages loop.");
+            // start removing pages...
+            for (int i = 0; i < pgcount; i++)
+            {
+                bool do_add = !ranges.Any(rng => (i >= (rng.From - 1) && i < rng.To));
+                e_progress.PagesDone++;
+
+                if (do_add == false)
+                    continue;
+
+                await Task.Delay(200);//delay for test....
+                var page = outputDocument.AddPage(doc.Pages[i]);
+
+
+                // notify progress
+                e_progress.Progress = ((float)e_progress.PagesDone / (float)e_progress.TotalPages) * 100.0f;
+                tracker?.Invoke(null, e_progress);
+
+                if (e_progress.Cancel)
+                {
+                    doc.Close();
+                    outputDocument.Close();
+                    e_progress.Failed("Failed because user exit.");
+                    tracker?.Invoke(null, e_progress);
+                    return await Task.FromResult(false);
+                }
+            }
+            doc.Close();
+
+            if(outputDocument.PageCount <= 0)
+            {
+                CrashReporting.Log($"RemovePages-> Outdoc page count was 0. Exiting...");
+                outputDocument.Close();
+
+                e_progress.Failed($"Failed because there are no pages to save.");
+                tracker?.Invoke(null, e_progress);
+                return await Task.FromResult(false);
+            }
+
+            //save document
+            CrashReporting.Log("RemovePages-> Trying to save, @CanSave()");
+            string msg = null;
+            if (outputDocument.CanSave(ref msg))
+            {
+                CrashReporting.Log("RemovePages-> Saving generated pdf file.");
+                outputDocument.Save(outfile);
+                outputDocument.Close();
+
+                CrashReporting.Log($"Exiting RemovePagesFromPDFAsync()");
+
+                e_progress.Sucess(e_progress.TotalPages);
+                tracker?.Invoke(null, e_progress);
+                return await Task.FromResult(true);
+            }
+
+            CrashReporting.Log($"RemovePages-> CanSave() retured false. Returning... (msg: {msg}).");
+            outputDocument.Close();
+            CrashReporting.Log($"Exiting RemovePagesFromPDFAsync()");
+
+            e_progress.Failed($"InternalError: {msg}");
+            tracker?.Invoke(null, e_progress);
+            return await Task.FromResult(false);
+        }
 
         /// <summary>
         /// merge pdf files
@@ -313,6 +440,10 @@ namespace PDF_ToolBox.PDF
         public static async Task<bool> MergePDFAsync(string[] infiles, string outfile, PdfProgressHandler tracker)
         {
             CrashReporting.Log($"In MergePDFAsync({infiles?.Length}, {outfile}, {tracker != null})");
+
+            if (outfile != null)
+                outfile = Path.Combine(FileSystem.GetMergePdfOutDir(), outfile);
+
             // Create the output document
             PdfDocument odoc = new PdfDocument();
 

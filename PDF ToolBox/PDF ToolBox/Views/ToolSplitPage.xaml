@@ -2,26 +2,29 @@
 <ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="PDF_ToolBox.Views.ToolSplitPage"
-             Title="Split Pdf">
+             xmlns:local="clr-namespace:PDF_ToolBox.ViewModels"  
+             xmlns:model="clr-namespace:PDF_ToolBox.Models" 
+             x:DataType="local:ToolSplitViewModel"
+             Title="{Binding Title}">
     <ContentPage.Content>
-        <ScrollView VerticalScrollBarVisibility="Default">
+        <ScrollView VerticalScrollBarVisibility="Default" >
             <StackLayout Padding="10">
-                <Entry Text="{Binding OutputPdfFile}" Placeholder="Output Pdf FileName or DirectoryName" HorizontalOptions="FillAndExpand" />
+                <Entry Text="{Binding OutputPdfFile}" Placeholder="Output Name" HorizontalOptions="FillAndExpand" />
 
                 <Button Text="Select PDF File" HorizontalOptions="FillAndExpand" Command="{Binding SelectPdfCommand}" />
                 <Label Text="{Binding PdfFile}" HorizontalOptions="CenterAndExpand" TextColor="Blue" FontAttributes="Bold" />
 
-                <Label Text="*Note that split result pdf file will be stored in same location." HorizontalOptions="StartAndExpand" TextColor="Green" FontSize="Small" />
-
                 <Label Text="Enter Ranges:" HorizontalOptions="StartAndExpand" FontAttributes="Bold" FontSize="Medium" />
+                <!--
                 <Label Text="*Format: [from]-[to] OR [single]. Use ',' comma for multiple ranges" HorizontalOptions="StartAndExpand" TextColor="Green" FontSize="Small" />
-                <Editor Text="{Binding SplitRanges}" Placeholder="Enter ranges to split. Use comma ',' in case of multiple ranges." HeightRequest="200" FontSize="Medium" />
-                <StackLayout Orientation="Horizontal">
+                -->
+                <Editor Text="{Binding PageRanges}" Placeholder="Format: [from]-[to] OR [single]. Use ',' comma for multiple ranges." HeightRequest="200" FontSize="Medium" />
+                <StackLayout Orientation="Horizontal" IsVisible="{Binding ShowMergeRanges}">
                     <CheckBox IsChecked="{Binding MergeRangesIntoOne}" />
                     <Label  Text="Merge all ranges in one file" FontSize="Medium" />
                 </StackLayout>
 
-                <Button Text="Split PDF" HorizontalOptions="FillAndExpand" Command="{Binding SplitPdfCommand}" />
+                <Button Text="Begin" HorizontalOptions="FillAndExpand" Command="{Binding SplitRemovePdfCommand}" />
             </StackLayout>
         </ScrollView>
     </ContentPage.Content>

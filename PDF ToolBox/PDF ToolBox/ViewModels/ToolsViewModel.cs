@@ -71,7 +71,9 @@ namespace PDF_ToolBox.ViewModels
                 return;
 
             if(item.Id == Tools.Ids.Split)
-                await Shell.Current.GoToAsync($"{nameof(ToolSplitPage)}");
+                await Shell.Current.GoToAsync($"{nameof(ToolSplitPage)}?{nameof(ToolSplitViewModel.PageType)}={ToolSplitViewModel.TypeSplit}");
+            else if (item.Id == Tools.Ids.RemovePage)
+                await Shell.Current.GoToAsync($"{nameof(ToolSplitPage)}?{nameof(ToolSplitViewModel.PageType)}={ToolSplitViewModel.TypeRemove}");
             else if(item.Id == Tools.Ids.Merge)
                 await Shell.Current.GoToAsync($"{nameof(ToolMergePage)}");
             else if (item.Id == Tools.Ids.Generated)
@@ -102,11 +104,11 @@ namespace PDF_ToolBox.ViewModels
                                                 outfile += ".pdf";
                                             }
 
-                                            string outfilepath = PDF.FileSystem.GetSecurityPdfOutDir();
+                                            string outfilepath = PDF.FileSystem.GetOtherPdfOutDir();
                                             outfile = System.IO.Path.Combine(outfilepath, outfile);
 
 
-                                            var exe = new PDF.PdfTaskExecutor(infile, outfile, password, item.Id == Tools.Ids.Lock);
+                                            var exe = PDF.PdfTaskExecutor.DoTaskLockOrUnlockPdf(infile, outfile, password, item.Id == Tools.Ids.Lock);
 
                                             await PdfTaskExecutorPopup.ShowAsync(exe);
                                         }

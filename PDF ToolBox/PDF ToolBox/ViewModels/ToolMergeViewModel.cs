@@ -111,7 +111,7 @@ namespace PDF_ToolBox.ViewModels
                 outfile += ".pdf";
             }
 
-            var executor = new PDF.PdfTaskExecutor(this.Items.Select(x => { return x.FilePath; }).ToArray(), outfile);
+            var executor = PDF.PdfTaskExecutor.DoTaskMergePdf(this.Items.Select(x => { return x.FilePath; }).ToArray(), outfile);
 
             //merge docs.....
             if (this.CheckIfMergeOutPdfAlreadyExists(outfile))

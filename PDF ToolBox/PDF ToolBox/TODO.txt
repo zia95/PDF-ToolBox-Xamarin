@@ -5,3 +5,6 @@
 5. split tool ranges doest check if fromidx>toidx.....done
 6. add scroll func. to tools......done
 7. about banner doesnt fill screen...done
+8. Remove pages, progres tracking logic isn't efficitive (e.g. can have long ranges in mid which will increase progress by alot. NOT Smooth!)
+9. Remove pages, checking if the page exist in remove-pages-range takes alot of time and can be improved.
+10. FIX merge page.

@@ -26,7 +26,7 @@ namespace PDF_ToolBox.Services
             { 
                 ViewModels.GeneratedPdfListViewModel.TypeSplit, 
                 ViewModels.GeneratedPdfListViewModel.TypeMerge, 
-                ViewModels.GeneratedPdfListViewModel.TypeSecurity 
+                ViewModels.GeneratedPdfListViewModel.TypeOther 
             };
 
             foreach(var ty in all_types)

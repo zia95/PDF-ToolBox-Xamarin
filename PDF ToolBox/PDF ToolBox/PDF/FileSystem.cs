@@ -37,7 +37,8 @@ namespace PDF_ToolBox.PDF
 
             if (dirtype == ViewModels.GeneratedPdfListViewModel.TypeSplit ||
                 dirtype == ViewModels.GeneratedPdfListViewModel.TypeMerge ||
-                dirtype == ViewModels.GeneratedPdfListViewModel.TypeSecurity)
+                dirtype == ViewModels.GeneratedPdfListViewModel.TypeSecurity ||
+                dirtype == ViewModels.GeneratedPdfListViewModel.TypeOther)
             {
                 return Directory.CreateDirectory(Path.Combine(d.FullName, dirtype)).FullName;
             }
@@ -46,7 +47,7 @@ namespace PDF_ToolBox.PDF
         }
         public static string GetSplitPdfOutDir() => GetPdfOutDir(ViewModels.GeneratedPdfListViewModel.TypeSplit);
         public static string GetMergePdfOutDir() => GetPdfOutDir(ViewModels.GeneratedPdfListViewModel.TypeMerge);
-        public static string GetSecurityPdfOutDir() => GetPdfOutDir(ViewModels.GeneratedPdfListViewModel.TypeSecurity);
+        public static string GetOtherPdfOutDir() => GetPdfOutDir(ViewModels.GeneratedPdfListViewModel.TypeOther);
 
         public static IEnumerable<Models.PdfFile> GetAllSplitPdfFiles()
         {
@@ -133,6 +134,6 @@ namespace PDF_ToolBox.PDF
         }
 
         public static IEnumerable<Models.PdfFile> GetAllMergePdfFiles() => GetAllPdfFilesOfType(ViewModels.GeneratedPdfListViewModel.TypeMerge);
-        public static IEnumerable<Models.PdfFile> GetAllSecurityPdfFiles() => GetAllPdfFilesOfType(ViewModels.GeneratedPdfListViewModel.TypeSecurity);
+        public static IEnumerable<Models.PdfFile> GetAllOtherPdfFiles() => GetAllPdfFilesOfType(ViewModels.GeneratedPdfListViewModel.TypeOther);
     }
 }

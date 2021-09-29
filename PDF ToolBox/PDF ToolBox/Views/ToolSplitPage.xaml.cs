@@ -13,16 +13,19 @@ namespace PDF_ToolBox.Views
     [XamlCompilation(XamlCompilationOptions.Compile)]
     public partial class ToolSplitPage : ContentPage
     {
+        private ToolSplitViewModel _viewmodel = null;
         public ToolSplitPage()
         {
             InitializeComponent();
 
-            BindingContext = new ToolSplitViewModel();
+            BindingContext = _viewmodel = new ToolSplitViewModel();
         }
         protected override void OnAppearing()
         {
             base.OnAppearing();
             Misc.CrashReporting.Log("ToolSplitPage->OnAppearing()");
+
+            this._viewmodel.OnAppearing();
         }
         protected override void OnDisappearing()
         {

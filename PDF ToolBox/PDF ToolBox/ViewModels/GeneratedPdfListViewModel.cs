@@ -17,9 +17,11 @@ namespace PDF_ToolBox.ViewModels
     public class GeneratedPdfListViewModel : BaseViewModel
     {
         public const string TypeSplit = "split";
+        public const string TypeRemove = "remove";
         public const string TypeMerge = "merge";
         public const string TypeSecurity = "security";
-        
+
+        public const string TypeOther = "other";//other = 'not split' and 'not merge'
 
         private const string DefaultPageType = TypeMerge;
 
@@ -42,7 +44,7 @@ namespace PDF_ToolBox.ViewModels
 
         public Command MergePdfListCommand { get; }
         public Command SplitPdfListCommand { get; }
-        public Command SecurityPdfListCommand { get; }
+        public Command OtherPdfListCommand { get; }
 
 
         public Command LoadItemsCommand { get; }
@@ -66,7 +68,7 @@ namespace PDF_ToolBox.ViewModels
 
             MergePdfListCommand = new Command(OnMergePdfList);
             SplitPdfListCommand = new Command(OnSplitPdfList);
-            SecurityPdfListCommand = new Command(OnSecurityPdfList);
+            OtherPdfListCommand = new Command(OnOtherPdfList);
         }
 
         Xamarin.Forms.Color _itmcolor;
@@ -81,7 +83,7 @@ namespace PDF_ToolBox.ViewModels
                 this._itmcolor = Color.LightBlue;
                 var items = await GeneratedPdfsDataStore.GetItemsAsync(true);
 
-                if (this.PageType != TypeSplit && this.PageType != TypeMerge && this.PageType != TypeSecurity)
+                if (this.PageType != TypeSplit && this.PageType != TypeRemove && this.PageType != TypeMerge && this.PageType != TypeSecurity && this.PageType != TypeOther)
                     this.PageType = DefaultPageType;
 
 
@@ -119,12 +121,17 @@ namespace PDF_ToolBox.ViewModels
 
                         if (item.Id == this.PdfFile) itm_to_scroll_to = Items.Count - 1;
                     }
-                    else if (this.PageType == TypeSecurity && item.PdfType == TypeSecurity)
+                    else if(this.PageType != TypeMerge && this.PageType != TypeSplit)
                     {
-                        item.ItemColor = this._itmcolor;
-                        Items.Add(item);
+                        if(item.PdfType == TypeOther ||
+                           item.PdfType == TypeSecurity || 
+                           item.PdfType == TypeRemove)
+                        {
+                            item.ItemColor = this._itmcolor;
+                            Items.Add(item);
 
-                        if (item.Id == this.PdfFile) itm_to_scroll_to = Items.Count - 1;
+                            if (item.Id == this.PdfFile) itm_to_scroll_to = Items.Count - 1;
+                        }
                     }
                 }
                 if(itm_to_scroll_to != -1) 
@@ -152,9 +159,9 @@ namespace PDF_ToolBox.ViewModels
             this.PageType = TypeSplit;
             await ExecuteLoadItemsCommand();
         }
-        private async void OnSecurityPdfList()
+        private async void OnOtherPdfList()
         {
-            this.PageType = TypeSecurity;
+            this.PageType = TypeOther;
             await ExecuteLoadItemsCommand();
         }
         public void OnAppearing()

@@ -87,6 +87,7 @@ namespace PDF_ToolBox.Views
                 $"{nameof(ViewModels.GeneratedPdfListViewModel.PageType)}={this._executor.TaskType}&" +
                 $"{nameof(ViewModels.GeneratedPdfListViewModel.PdfFile)}={this._executor.OutputFile}");
 
+
             await Rg.Plugins.Popup.Services.PopupNavigation.Instance.PopAsync();
         }
 

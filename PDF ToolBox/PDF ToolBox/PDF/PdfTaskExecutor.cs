@@ -11,44 +11,68 @@ namespace PDF_ToolBox.PDF
         public string[] InputFiles { get; private set; }
         public string OutputFile { get; private set; }
         public bool MergeIntoOne { get; private set; }
-        public ToolHelper.PageRange[] SplitRanges { get; private set; }
-        //public ToolHelper.PdfProgressHandler ProgressTracker { get; private set; }
+        public ToolHelper.PageRange[] PageRanges { get; private set; }
 
         public string Password { get; private set; }
         public bool LockOrUnlock { get; private set; }
 
         public string TaskType { get; set; }
-        
 
-        public PdfTaskExecutor(string infile, string outfile, bool merge, ToolHelper.PageRange[] ranges)
+
+        private PdfTaskExecutor() { }
+
+        public static PdfTaskExecutor DoTaskMergePdf(string[] infiles, string outfile)
         {
-            this.InputFiles = new string[] { infile };
-            this.OutputFile = outfile;
-            this.MergeIntoOne = merge;
-            this.SplitRanges = ranges;
-            this.TaskType = ViewModels.GeneratedPdfListViewModel.TypeSplit;
+            PdfTaskExecutor exe = new PdfTaskExecutor();
+            exe.InputFiles = infiles;
+            exe.OutputFile = outfile;
+            exe.TaskType = ViewModels.GeneratedPdfListViewModel.TypeMerge;
+            return exe;
         }
-        public PdfTaskExecutor(string[] infiles, string outfile)
+        public static PdfTaskExecutor DoTaskLockOrUnlockPdf(string infile, string outfile, string password, bool lockOrUnlock)
         {
-            this.InputFiles = infiles;
-            this.OutputFile = outfile;
-            this.TaskType = ViewModels.GeneratedPdfListViewModel.TypeMerge;
+            PdfTaskExecutor exe = new PdfTaskExecutor();
+            exe.InputFiles = new string[] { infile };
+            exe.OutputFile = outfile;
+            exe.Password = password;
+            exe.LockOrUnlock = lockOrUnlock;
+            exe.TaskType = ViewModels.GeneratedPdfListViewModel.TypeSecurity;
+            return exe;
         }
-        public PdfTaskExecutor(string infile, string outfile, string password, bool lockOrUnlock)
+
+        public static PdfTaskExecutor DoTaskSplitPdf(string infile, string outfile, bool merge, ToolHelper.PageRange[] ranges)
         {
-            this.InputFiles = new string[] { infile };
-            this.OutputFile = outfile;
-            this.Password = password;
-            this.LockOrUnlock = lockOrUnlock;
-            this.TaskType = ViewModels.GeneratedPdfListViewModel.TypeSecurity;
+            PdfTaskExecutor exe = new PdfTaskExecutor();
+            exe.InputFiles = new string[] { infile };
+            exe.OutputFile = outfile;
+            exe.MergeIntoOne = merge;
+            exe.PageRanges = ranges;
+            exe.TaskType = ViewModels.GeneratedPdfListViewModel.TypeSplit;
+            return exe;
         }
+        public static PdfTaskExecutor DoTaskRemovePagesFromPdf(string infile, string outfile, ToolHelper.PageRange[] ranges)
+        {
+            PdfTaskExecutor exe = new PdfTaskExecutor();
+            exe.InputFiles = new string[] { infile };
+            exe.OutputFile = outfile;
+            exe.MergeIntoOne = true;
+            exe.PageRanges = ranges;
+            exe.TaskType = ViewModels.GeneratedPdfListViewModel.TypeRemove;
+            return exe;
+        }
+
+
 
 
         public async Task<bool> ExecuteAsync(ToolHelper.PdfProgressHandler tracker)
         {
             if(TaskType == ViewModels.GeneratedPdfListViewModel.TypeSplit)
             {
-                return await ToolHelper.SplitPDFAsync(this.InputFiles[0], this.OutputFile, this.MergeIntoOne, this.SplitRanges, tracker);
+                return await ToolHelper.SplitPDFAsync(this.InputFiles[0], this.OutputFile, this.MergeIntoOne, this.PageRanges, tracker);
+            }
+            if (TaskType == ViewModels.GeneratedPdfListViewModel.TypeRemove)
+            {
+                return await ToolHelper.RemovePagesFromPDFAsync(this.InputFiles[0], this.OutputFile, this.PageRanges, tracker);
             }
             else if(TaskType == ViewModels.GeneratedPdfListViewModel.TypeMerge)
             {
@@ -65,8 +89,10 @@ namespace PDF_ToolBox.PDF
                     return await ToolHelper.UnlockPdfAsync(this.InputFiles[0], this.OutputFile, this.Password, tracker);
                 }
             }
-
-            return false;
+            else
+            {
+                throw new NotImplementedException($"Task {TaskType} is not implemented.");
+            }
         }
 
     }

@@ -8,12 +8,25 @@ using System.Linq;
 
 namespace PDF_ToolBox.ViewModels
 {
+    [QueryProperty(nameof(PageType), nameof(PageType))]
     class ToolSplitViewModel : BaseViewModel
     {
-        public Command SelectPdfCommand { get; }
-        public Command SplitPdfCommand { get; }
+        public const string TypeSplit = "split";
+        public const string TypeRemove = "remove";
 
-        private readonly string pdf_split_dir = PDF.FileSystem.GetSplitPdfOutDir();
+
+        public Command SelectPdfCommand { get; }
+        public Command SplitRemovePdfCommand { get; }
+
+        private string _pageType = TypeSplit;
+        public string PageType
+        {
+            get => this._pageType;
+            set
+            {
+                this._pageType = value;
+            }
+        }
 
         private string _pdf_file;
         public string PdfFile
@@ -29,11 +42,11 @@ namespace PDF_ToolBox.ViewModels
             set => SetProperty(ref _out_pdf, value);
         }
 
-        private string _split_ranges;
-        public string SplitRanges
+        private string _page_ranges;
+        public string PageRanges
         {
-            get => _split_ranges;
-            set => SetProperty(ref _split_ranges, value);
+            get => _page_ranges;
+            set => SetProperty(ref _page_ranges, value);
         }
 
         private bool _merge_ranges_into_one = true;
@@ -43,6 +56,9 @@ namespace PDF_ToolBox.ViewModels
             set => SetProperty(ref _merge_ranges_into_one, value);
         }
 
+        private bool _showmerge = false;
+        public bool ShowMergeRanges { get => _showmerge; set { _showmerge = value; OnPropertyChanged(nameof(this.ShowMergeRanges)); } }
+
 
 
 
@@ -51,10 +67,21 @@ namespace PDF_ToolBox.ViewModels
             this.SelectPdfCommand = new Command(OnSelectPdfClicked);
             this.PdfFile = "No Pdf File Selected.";
 
-            this.SplitPdfCommand = new Command(OnSplitPdfClicked);
+            this.SplitRemovePdfCommand = new Command(OnSplitRemovePdfClicked);
+
+            
         }
 
-        private async void OnSelectPdfClicked(object obj)
+        public void OnAppearing()
+        {
+            this.Title = this.PageType == ToolSplitViewModel.TypeSplit ? "Split PDF" : "Remove Pages";
+            this.ShowMergeRanges = this.PageType == ToolSplitViewModel.TypeSplit;
+
+            if (this.ShowMergeRanges == false)
+                this.MergeRangesIntoOne = true;
+        }
+
+        private async void OnSelectPdfClicked()
         {
             var res = await PDF.FileSystem.PickAndShowPdfAsync();
             if(res != null)
@@ -73,11 +100,11 @@ namespace PDF_ToolBox.ViewModels
             
         }
 
-        private bool CheckIfSplitOutPdfAlreadyExists(string outpdf)
+        private bool CheckIfOutPdfAlreadyExists(string outpdf)
         {
-            foreach (var m in PDF.FileSystem.GetAllSplitPdfFiles())
+            foreach (var m in this.PageType == TypeSplit ? PDF.FileSystem.GetAllSplitPdfFiles() : PDF.FileSystem.GetAllOtherPdfFiles())
             {
-                if (m.Id == outpdf)
+                if (m.FileName == outpdf)
                 {
                     return true;
                 }
@@ -86,7 +113,7 @@ namespace PDF_ToolBox.ViewModels
         }
 
 
-        private async void OnSplitPdfClicked(object obj)
+        private async void OnSplitRemovePdfClicked()
         {
             //check all data.... if incorrect return after reporting...
             if (string.IsNullOrWhiteSpace(this.OutputPdfFile))
@@ -97,11 +124,11 @@ namespace PDF_ToolBox.ViewModels
 
             if (string.IsNullOrWhiteSpace(this.PdfFile) || !System.IO.File.Exists(this.PdfFile))
             {
-                await Views.MessagePopup.ShowAsync("Input Pdf file", "Select Pdf file to split.", "OK");
+                await Views.MessagePopup.ShowAsync("Input Pdf file", "Select Pdf file.", "OK");
                 return;
             }
 
-            var e_ranges = PDF.ToolHelper.ParseRanges(this.SplitRanges);
+            var e_ranges = PDF.ToolHelper.ParseRanges(this.PageRanges);
             if(e_ranges == null || e_ranges.Count() <= 0)
             {
                 await Views.MessagePopup.ShowAsync("Failed", $"Failed to parse the ranges", "OK");
@@ -111,7 +138,7 @@ namespace PDF_ToolBox.ViewModels
 
             //get output pdf path 
             //and if merge is false check if filename doesnt have '.pdf' extension append it.
-            string outfile = System.IO.Path.Combine(this.pdf_split_dir, this.OutputPdfFile);
+            string outfile = this.OutputPdfFile;
 
             if(this.MergeRangesIntoOne)
             {
@@ -124,14 +151,27 @@ namespace PDF_ToolBox.ViewModels
             }
 
 
-            //split pdf file
+            //split/removepages pdf file
 
             var ranges = new List<PDF.ToolHelper.PageRange>(e_ranges).ToArray();
+            PDF.PdfTaskExecutor executor = null;
 
-            var executor = new PDF.PdfTaskExecutor(this.PdfFile, outfile, this.MergeRangesIntoOne, ranges);
+            if (this.PageType == ToolSplitViewModel.TypeSplit)
+            {
+                executor = PDF.PdfTaskExecutor.DoTaskSplitPdf(this.PdfFile, outfile, this.MergeRangesIntoOne, ranges);
+            }
+            else if (this.PageType == ToolSplitViewModel.TypeRemove)
+            {
+                executor = PDF.PdfTaskExecutor.DoTaskRemovePagesFromPdf(this.PdfFile, outfile, ranges);
+            }
+            else
+            {
+                throw new NotImplementedException($"Type {this.PageType} is not implemented.");
+            }
+            
 
             //run ui and split
-            if (this.CheckIfSplitOutPdfAlreadyExists(outfile))
+            if (this.CheckIfOutPdfAlreadyExists(outfile))
             {
                 await Views.MessagePopup.ShowAsync("Overwrite",
                     "It seems like output file/dir with the same name already exists.\nDo you want to overwrite?", "Cancel", "Yes", null,
