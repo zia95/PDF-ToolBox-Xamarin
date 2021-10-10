@@ -110,7 +110,7 @@ namespace PDF_ToolBox.Views
 
             await this._executor.ExecuteAsync(tracker);
         }
-        private void tracker(object sender, PDF.ToolHelper.PdfProgressEventArgs e)
+        private bool tracker(object sender, PDF.ToolHelper.PdfProgressEventArgs e)
         {
             this._tracker = e;
             this.Title = $"Pdf is being {this._executor.TaskType}";
@@ -126,8 +126,8 @@ namespace PDF_ToolBox.Views
                 }
                 else
                 {
-                    e.Cancel = true;
                     this.Message = $"Please wait... cleaning up...";
+                    return false;
                 }
             }
             else
@@ -144,12 +144,13 @@ namespace PDF_ToolBox.Views
                 else
                 {
                     this.Message = this._tracker.ErrorMessage;
-                    if(this._tracker.Cancel)
+                    if(this._cancelButtonPressed)
                     {
                         this.OnCancelClicked(this, EventArgs.Empty);
                     }
                 }
             }
+            return true;
         }
 
         protected override void OnDisappearing()
@@ -158,7 +159,6 @@ namespace PDF_ToolBox.Views
             Misc.CrashReporting.Log("PdfTaskExecutorPopup->OnDisappearing()");
             this.OnResult?.Invoke(this, EventArgs.Empty);
         }
-
 
         // Invoked when a hardware back button is pressed
         protected override bool OnBackButtonPressed()

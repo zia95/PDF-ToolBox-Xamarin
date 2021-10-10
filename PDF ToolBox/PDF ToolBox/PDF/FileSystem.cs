@@ -17,9 +17,19 @@ namespace PDF_ToolBox.PDF
             new PickOptions() { PickerTitle = title, FileTypes = FilePickerFileType.Pdf }
             );
 
-        public static async Task<IEnumerable<FileResult>> PickAndShowMultiAsync(string title = "Select Pdf Files") => await PickAndShowMultiAsync(
+        public static async Task<IEnumerable<FileResult>> PickAndShowPdfMultiAsync(string title = "Select Pdf Files") => await PickAndShowMultiAsync(
             new PickOptions() { PickerTitle = title, FileTypes = FilePickerFileType.Pdf }
             );
+
+        public static async Task<FileResult> PickAndShowJpegAsync(string title = "Select Jpeg File") => await PickAndShowAsync(
+            new PickOptions() { PickerTitle = title, FileTypes = FilePickerFileType.Images }
+            );
+
+        public static async Task<IEnumerable<FileResult>> PickAndShowJpegMultiAsync(string title = "Select Jpeg Files") => await PickAndShowMultiAsync(
+            new PickOptions() { PickerTitle = title, FileTypes = FilePickerFileType.Images }
+            );
+
+
 
         public static async Task<FileResult> PickAndShowAsync(PickOptions options) => await FilePicker.PickAsync(options);
         public static async Task<IEnumerable<FileResult>> PickAndShowMultiAsync(PickOptions options) => await FilePicker.PickMultipleAsync(options);

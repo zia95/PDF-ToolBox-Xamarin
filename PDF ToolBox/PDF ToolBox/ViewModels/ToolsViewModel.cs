@@ -74,57 +74,20 @@ namespace PDF_ToolBox.ViewModels
                 await Shell.Current.GoToAsync($"{nameof(ToolSplitPage)}?{nameof(ToolSplitViewModel.PageType)}={ToolSplitViewModel.TypeSplit}");
             else if (item.Id == Tools.Ids.RemovePage)
                 await Shell.Current.GoToAsync($"{nameof(ToolSplitPage)}?{nameof(ToolSplitViewModel.PageType)}={ToolSplitViewModel.TypeRemove}");
+            //else if (item.Id == Tools.Ids.Watermark)
+            //    await Shell.Current.GoToAsync($"{nameof(ToolSplitPage)}?{nameof(ToolSplitViewModel.PageType)}={ToolSplitViewModel.TypeWatermark}");
             else if(item.Id == Tools.Ids.Merge)
-                await Shell.Current.GoToAsync($"{nameof(ToolMergePage)}");
+                await Shell.Current.GoToAsync($"{nameof(ToolMergePage)}?{nameof(ToolMergeViewModel.PageType)}={ToolMergeViewModel.TypeMerge}");
+            //else if (item.Id == Tools.Ids.ImagesToPdf)
+            //    await Shell.Current.GoToAsync($"{nameof(ToolMergePage)}?{nameof(ToolMergeViewModel.PageType)}={ToolMergeViewModel.TypeImagesToPdf}");
             else if (item.Id == Tools.Ids.Generated)
                 await Shell.Current.GoToAsync($"{nameof(GeneratedPdfListPage)}");
-            else if (item.Id == Tools.Ids.Lock || item.Id == Tools.Ids.Unlock)
-            {
-                var file = await PDF.FileSystem.PickAndShowPdfAsync();
-                if(file != null)
-                {
-                    if(PDF.ToolHelper.IsValidPdfFile(file.FullPath))
-                    {
-                        await Views.InputPopup.ShowAsync("File Name", Keyboard.Default, "File Name", $"Enter new file name for {item.Id} file", "Cancel", "OK", this,
-                            async (ss, ee) => {
-                                if (((InputPopup)ss).Result)
-                                {
-                                    await Views.InputPopup.ShowAsync("Lock/Unlock", Keyboard.Default, "Password", $"Enter Password to {item.Id} Pdf.", "Cancel", "OK", this,
-                                    async (sender, e) => {
-                                        if (((InputPopup)sender).Result)
-                                        {
-                                            string infile = file.FullPath;
-                                            string outfile = ((InputPopup)ss).Input;
-                                            string password = ((InputPopup)sender).Input;
-
-
-                                            string extension = System.IO.Path.GetExtension(outfile);
-                                            if (string.IsNullOrWhiteSpace(extension) || extension.Equals(".pdf", StringComparison.CurrentCultureIgnoreCase) == false)
-                                            {
-                                                outfile += ".pdf";
-                                            }
-
-                                            string outfilepath = PDF.FileSystem.GetOtherPdfOutDir();
-                                            outfile = System.IO.Path.Combine(outfilepath, outfile);
-
-
-                                            var exe = PDF.PdfTaskExecutor.DoTaskLockOrUnlockPdf(infile, outfile, password, item.Id == Tools.Ids.Lock);
-
-                                            await PdfTaskExecutorPopup.ShowAsync(exe);
-                                        }
-                                    });
-                                }
-                                
-                            });
-
-                        
-                    }
-                    else
-                    {
-                        await Views.MessagePopup.ShowAsync("Invalid File", "Pdf File in invalid or not supported", "OK");
-                    }
-                }
-            }
+            else if (item.Id == Tools.Ids.Lock)
+                await Shell.Current.GoToAsync($"{nameof(ToolLockUnlockPdfPage)}?{nameof(ToolLockUnlockPdfViewModel.PageType)}={ToolLockUnlockPdfViewModel.TypeLock}");
+            else if (item.Id == Tools.Ids.Unlock)
+                await Shell.Current.GoToAsync($"{nameof(ToolLockUnlockPdfPage)}?{nameof(ToolLockUnlockPdfViewModel.PageType)}={ToolLockUnlockPdfViewModel.TypeUnlock}");
+            else if (item.Id == Tools.Ids.ViewInformation)
+                await Shell.Current.GoToAsync($"{nameof(ToolViewPdfInfoPage)}");
             else
             {
                 await Views.MessagePopup.ShowAsync("Not Supported", "This feature will be added soon.", "OK");

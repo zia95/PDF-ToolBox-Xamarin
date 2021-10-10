@@ -9,11 +9,23 @@
     <ContentPage.Content>
         <ScrollView VerticalScrollBarVisibility="Default" >
             <StackLayout Padding="10">
-                <Entry Text="{Binding OutputPdfFile}" Placeholder="Output Name" HorizontalOptions="FillAndExpand" />
+                <!--Document entry ui-->
+                <Entry Text="{Binding OutputPdfFile}" Placeholder="Output Name" HorizontalOptions="FillAndExpand" FontSize="Medium" />
 
                 <Button Text="Select PDF File" HorizontalOptions="FillAndExpand" Command="{Binding SelectPdfCommand}" />
                 <Label Text="{Binding PdfFile}" HorizontalOptions="CenterAndExpand" TextColor="Blue" FontAttributes="Bold" />
 
+                <!--Watermark options ui-->
+                <Entry IsVisible="{Binding ShowWatermarkOptions}" Placeholder="Watermark Text" Text="{Binding WatermarkText}" HorizontalOptions="FillAndExpand" FontSize="Medium" />
+                <Picker IsVisible="{Binding ShowWatermarkOptions}" Title="Select Watermark Type" SelectedIndex="{Binding WatermarkType}" HorizontalOptions="FillAndExpand">
+                    <Picker.Items>
+                        <x:String>Simple Text</x:String>
+                        <x:String>Outline Text</x:String>
+                        <x:String>Transparent Text</x:String>
+                    </Picker.Items>
+                </Picker>
+
+                <!--Ranges UI-->
                 <Label Text="Enter Ranges:" HorizontalOptions="StartAndExpand" FontAttributes="Bold" FontSize="Medium" />
                 <!--
                 <Label Text="*Format: [from]-[to] OR [single]. Use ',' comma for multiple ranges" HorizontalOptions="StartAndExpand" TextColor="Green" FontSize="Small" />
@@ -24,7 +36,8 @@
                     <Label  Text="Merge all ranges in one file" FontSize="Medium" />
                 </StackLayout>
 
-                <Button Text="Begin" HorizontalOptions="FillAndExpand" Command="{Binding SplitRemovePdfCommand}" />
+                <!--Start UI-->
+                <Button Text="Begin" HorizontalOptions="FillAndExpand" Command="{Binding StartPdfCommand}" />
             </StackLayout>
         </ScrollView>
     </ContentPage.Content>

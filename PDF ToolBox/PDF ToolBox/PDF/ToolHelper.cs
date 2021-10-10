@@ -21,7 +21,7 @@ namespace PDF_ToolBox.PDF
     public class ToolHelper
     {
         public static bool IsValidPdfFile(string file) => PdfReader.TestPdfFile(file) != 0;
-
+        public static bool IsValidImageFile(string file) => XImage.ExistsFile(file);
 
         public class PdfProgressEventArgs : EventArgs
         {
@@ -31,8 +31,6 @@ namespace PDF_ToolBox.PDF
             public string ErrorMessage { get; set; } = null;
             public int TotalPages { get; set; } = -1;
             public int PagesDone { get; set; } = 0;
-
-            public bool Cancel { get; set; } = false;
 
             public PdfProgressEventArgs Failed(string msg)
             {
@@ -51,10 +49,16 @@ namespace PDF_ToolBox.PDF
                 this.PagesDone = pages_done;
                 return this;
             }
-            public PdfProgressEventArgs Sucess() => Sucess(-1);
+            public PdfProgressEventArgs SucessNoPages() => Sucess(-1);
         }
 
-        public delegate void PdfProgressHandler(object sender, PdfProgressEventArgs e);
+        /// <summary>
+        /// Handler for tracking progress
+        /// </summary>
+        /// <param name="sender">source</param>
+        /// <param name="e">event args</param>
+        /// <returns>continue with operation or cancel</returns>
+        public delegate bool PdfProgressHandler(object sender, PdfProgressEventArgs e);
 
 
         public struct PageRange
@@ -143,16 +147,19 @@ namespace PDF_ToolBox.PDF
         /// <returns>split document was sucessful or not</returns>
         public static async Task<bool> SplitPDFAsync(string infile, string outfile, bool merge, PageRange[] ranges, PdfProgressHandler tracker)
         {
-            CrashReporting.Log($"In SplitPDFAsync({infile}, {outfile}, {merge}, <{ranges?.Length}>, {tracker != null})");
+            CrashReporting.Log("Split", $"Parameters: ({infile}, {outfile}, {merge}, <{ranges?.Length}>, {tracker != null})");
+
+            //-------------------------------------------------------------------------------------//
+            //              Opening document and getting reading to perform op                     //
+            //-------------------------------------------------------------------------------------//
 
             if (outfile != null)
                 outfile = Path.Combine(FileSystem.GetSplitPdfOutDir(), outfile);
 
             // Open the file
             PdfProgressEventArgs e_progress = new PdfProgressEventArgs();
-            e_progress.TotalPages = GetTotalPagesInRanges(ranges);
 
-            CrashReporting.Log("Split-> Opening input pdf.");
+            CrashReporting.Log("Split", "Opening input pdf.");
 
             PdfDocument doc;
             try
@@ -161,20 +168,34 @@ namespace PDF_ToolBox.PDF
             }
             catch (PdfSharp.Pdf.IO.PdfReaderException ex)
             {
-                CrashReporting.Log("Split-> Exception while opening input pdf.");
+                CrashReporting.Log("Split", $"Exception while opening input pdf. (msg: {ex.Message})");
                 tracker?.Invoke(null, e_progress.Failed($"InternalError: {ex.Message}."));
                 return await Task.FromResult(false);
             }
             if (doc == null)
             {
-                CrashReporting.Log("Split-> While opening input pdf doc retured <null>.");
+                CrashReporting.Log("Split", "While opening input pdf doc retured <null>.");
                 tracker?.Invoke(null, e_progress.Failed($"Doc object <null>."));
                 return await Task.FromResult(false);
             }
 
             PdfDocument outputDocument = null;
 
-            CrashReporting.Log("Split-> Checking ranges are out of range or invalid.");
+
+            CrashReporting.Log("Split", "Checking ranges are not greater than page count or invalid.");
+
+            e_progress.TotalPages = GetTotalPagesInRanges(ranges);
+            // are total ranges 0?
+            if (e_progress.TotalPages <= 0)
+            {
+                CrashReporting.Log("Split", "No pages to split.");
+                doc.Close();
+
+                e_progress.Failed("Failed because there are no pages to split.");
+                tracker?.Invoke(null, e_progress);
+                return await Task.FromResult(false);
+            }
+
             //check ranges are not out of bound before split begins
             int pgcount = doc.PageCount;
             for (int i = 0; i < ranges.Length; i++)
@@ -190,13 +211,16 @@ namespace PDF_ToolBox.PDF
                     return await Task.FromResult(false);
                 }
             }
-            CrashReporting.Log("Split-> In pdf spliting loop.");
+            CrashReporting.Log("Split", "In pdf spliting loop.");
+            //-------------------------------------------------------------------------------------//
+            //              Split page loop                                                        //
+            //-------------------------------------------------------------------------------------//
             // start spliting...
             for (int i = 0; i < ranges.Length; i++)
             {
                 if (outputDocument == null)
                 {
-                    CrashReporting.Log("Split-> Creating document.");
+                    CrashReporting.Log("Split", "Creating document.");
                     outputDocument = new PdfDocument();
 
                     outputDocument.Version = doc.Version;
@@ -216,16 +240,20 @@ namespace PDF_ToolBox.PDF
                     var page = outputDocument.AddPage(doc.Pages[idx]);
                     e_progress.PagesDone++;
                     e_progress.Progress = ((float)e_progress.PagesDone / (float)e_progress.TotalPages) * 100.0f;
-                    tracker?.Invoke(null, e_progress);
 
-                    if(e_progress.Cancel)
+                    if(tracker != null)
                     {
-                        doc.Close();
-                        outputDocument.Close();
-                        e_progress.Failed("Failed because user exit.");
-                        tracker?.Invoke(null, e_progress);
-                        return await Task.FromResult(false);
+                        if (tracker.Invoke(null, e_progress) == false)
+                        {
+                            doc.Close();
+                            outputDocument.Close();
+                            e_progress.Failed("Failed because user exit.");
+                            tracker?.Invoke(null, e_progress);
+                            return await Task.FromResult(false);
+                        }
                     }
+
+                    
                 }
 
                 //if merge is false save the document where range of pages has been added and set document object to null so it can create at start of loop.
@@ -294,10 +322,6 @@ namespace PDF_ToolBox.PDF
                 }
             }
 
-            CrashReporting.Log($"Exiting SplitPDFAsync()");
-
-            //throw new Exception("Test exception in split()");
-
             doc.Close();
             e_progress.Sucess(e_progress.TotalPages);
             tracker?.Invoke(null, e_progress);
@@ -331,7 +355,7 @@ namespace PDF_ToolBox.PDF
             }
             catch (PdfSharp.Pdf.IO.PdfReaderException ex)
             {
-                CrashReporting.Log("RemovePages-> Exception while opening input pdf.");
+                CrashReporting.Log("RemovePages", $"Exception while opening input pdf. (msg: {ex.Message})");
                 tracker?.Invoke(null, e_progress.Failed($"InternalError: {ex.Message}."));
                 return await Task.FromResult(false);
             }
@@ -382,16 +406,19 @@ namespace PDF_ToolBox.PDF
 
                 // notify progress
                 e_progress.Progress = ((float)e_progress.PagesDone / (float)e_progress.TotalPages) * 100.0f;
-                tracker?.Invoke(null, e_progress);
 
-                if (e_progress.Cancel)
+                if(tracker != null)
                 {
-                    doc.Close();
-                    outputDocument.Close();
-                    e_progress.Failed("Failed because user exit.");
-                    tracker?.Invoke(null, e_progress);
-                    return await Task.FromResult(false);
+                    if (tracker.Invoke(null, e_progress) == false)
+                    {
+                        doc.Close();
+                        outputDocument.Close();
+                        e_progress.Failed("Failed because user exit.");
+                        tracker?.Invoke(null, e_progress);
+                        return await Task.FromResult(false);
+                    }
                 }
+                
             }
             doc.Close();
 
@@ -494,19 +521,22 @@ namespace PDF_ToolBox.PDF
 
                         e_progress.PagesDone++;
                         e_progress.Progress = ((float)e_progress.PagesDone / (float)e_progress.TotalPages) * 100.0f;
-                        tracker?.Invoke(null, e_progress);
 
-                        if (e_progress.Cancel)
+                        if(tracker != null)
                         {
-                            foreach (var d in idocs)
-                                d.Close();
+                            if (tracker?.Invoke(null, e_progress) == false)
+                            {
+                                foreach (var d in idocs)
+                                    d.Close();
 
-                            odoc.Close();
+                                odoc.Close();
 
-                            e_progress.Failed("Failed because user exit.");
-                            tracker?.Invoke(null, e_progress);
-                            return await Task.FromResult(false);
+                                e_progress.Failed("Failed because user exit.");
+                                tracker?.Invoke(null, e_progress);
+                                return await Task.FromResult(false);
+                            }
                         }
+                        
                     }
                 }
                 //there is no need for the input document anymore as it is already added to the output document
@@ -551,11 +581,14 @@ namespace PDF_ToolBox.PDF
         /// <param name="password">password to change to (null in case to remove password)</param>
         /// <param name="tracker">this event will be called each time change in progress happens</param>
         /// <returns>lock or unlock pdf was sucessful or not</returns>
-        public static async Task<bool> LockPdfAsync(string infile, string outfile, string currpassword, string password, PdfProgressHandler tracker)
+        public static async Task<bool> LockUnlockPdfAsync(string infile, string outfile, string currpassword, string password, PdfProgressHandler tracker)
         {
-            CrashReporting.Log($"In LockPdfAsync({infile}, {outfile}, {currpassword}, {password}, {tracker != null})");
+            CrashReporting.Log("LockUnlockPdfAsync", $"({infile}, {outfile}, {currpassword}, {password}, {tracker != null})");
+            
+            if (outfile != null)
+                outfile = Path.Combine(FileSystem.GetOtherPdfOutDir(), outfile);
 
-            CrashReporting.Log($"LockPdf-> Trying to open pdf doc.");
+            CrashReporting.Log("LockUnlockPdfAsync", $"Trying to open pdf doc.");
             PdfDocument doc = null;
             try
             {
@@ -563,19 +596,19 @@ namespace PDF_ToolBox.PDF
             }
             catch(PdfSharp.Pdf.IO.PdfReaderException ex)
             {
-                CrashReporting.Log($"LockPdf-> Failed to open pdf doc (ex: {ex.Message})");
+                CrashReporting.Log("LockUnlockPdfAsync", $"Failed to open pdf doc (ex: {ex.Message})");
                 tracker?.Invoke(null, new PdfProgressEventArgs().Failed($"InternalError: {ex.Message}."));
                 return await Task.FromResult(false);
             }
             
             if(doc == null)
             {
-                CrashReporting.Log($"LockPdf-> Failed to open pdf doc because object <null>.");
+                CrashReporting.Log("LockUnlockPdfAsync", $"Failed to open pdf doc because object <null>.");
                 tracker?.Invoke(null, new PdfProgressEventArgs().Failed($"Doc object <null>."));
                 return await Task.FromResult(false);
             }
 
-            CrashReporting.Log($"LockPdf-> Settings password, Is password null {password != null}.");
+            CrashReporting.Log("LockUnlockPdfAsync", $"Settings password, Is password null {password != null}.");
 
             PdfSecuritySettings securitySettings = doc.SecuritySettings;
 
@@ -588,24 +621,473 @@ namespace PDF_ToolBox.PDF
             if (password == null)
                 securitySettings.DocumentSecurityLevel = PdfDocumentSecurityLevel.None;
 
-            CrashReporting.Log($"LockPdf-> Trying to save pdf doc.");
+            CrashReporting.Log("LockUnlockPdfAsync", $"Trying to save pdf doc.");
             string msg = null;
             if(doc.CanSave(ref msg))
             {
-                CrashReporting.Log($"LockPdf-> Saving pdf doc.");
+                CrashReporting.Log("LockUnlockPdfAsync", $"Saving pdf doc.");
                 doc.Save(outfile);
                 doc.Close();
-                tracker?.Invoke(null, new PdfProgressEventArgs().Sucess());
+                tracker?.Invoke(null, new PdfProgressEventArgs().SucessNoPages());
                 return await Task.FromResult(true);
             }
 
-            CrashReporting.Log($"LockPdf-> Failed to save pdf doc (msg: {msg}).");
-            CrashReporting.Log($"Exiting LockPdfAsync()");
+            CrashReporting.Log("LockUnlockPdfAsync", $"Failed to save pdf doc (msg: {msg}).");
             doc.Close();
             tracker?.Invoke(null, new PdfProgressEventArgs().Failed(msg));
             return await Task.FromResult(false);
         }
-        public static async Task<bool> LockPdfAsync(string infile, string outfile, string password, PdfProgressHandler tracker) => await LockPdfAsync(infile, outfile, null, password, tracker);
-        public static async Task<bool> UnlockPdfAsync(string infile, string outfile, string currpassword, PdfProgressHandler tracker) => await LockPdfAsync(infile, outfile, currpassword, null, tracker);
+        public static async Task<bool> LockPdfAsync(string infile, string outfile, string password, PdfProgressHandler tracker) => await LockUnlockPdfAsync(infile, outfile, null, password, tracker);
+        public static async Task<bool> UnlockPdfAsync(string infile, string outfile, string currpassword, PdfProgressHandler tracker) => await LockUnlockPdfAsync(infile, outfile, currpassword, null, tracker);
+
+
+        public enum WatermarkType
+        {
+            Text,
+            Outline,
+            Transparent,
+        };
+
+        private static bool DrawWatermarkToPage(PdfPage page, string watermarkstring, WatermarkType watermarktype)
+        {
+            //sample-url: http://www.pdfsharp.com/PDFsharp/index.php?option=com_content&task=view&id=40&Itemid=47
+
+            XGraphics gfx = null;
+            try
+            {
+                gfx = XGraphics.FromPdfPage(page, XGraphicsPdfPageOptions.Prepend);
+            }
+            catch(Exception)
+            {
+                return false;
+            }
+
+            if (gfx == null)
+                return false;
+
+
+            XFont font = new XFont(new Font(FontFamily.GenericSerif, 8, FontStyle.Bold));//new XFont("Verdana", 8, XFontStyle.Bold);
+            
+            
+            // Get the size (in point) of the text
+            XSize size = gfx.MeasureString(watermarkstring, font);
+            
+            // Define a rotation transformation at the center of the page
+            gfx.TranslateTransform(page.Width / 2, page.Height / 2);
+            gfx.RotateTransform(-Math.Atan(page.Height / page.Width) * 180 / Math.PI);
+            gfx.TranslateTransform(-page.Width / 2, -page.Height / 2);
+
+            if (watermarktype == WatermarkType.Text)
+            {
+                // Create a string format
+                XStringFormat format = new XStringFormat();
+                format.Alignment = XStringAlignment.Near;
+                format.LineAlignment = XLineAlignment.Near;
+
+                // Create a dimmed red brush
+                XBrush brush = new XSolidBrush(XColor.FromArgb(128, 255, 0, 0));
+
+                // Draw the string
+                gfx.DrawString(watermarkstring, font, brush,
+                  new XPoint((page.Width - size.Width) / 2, (page.Height - size.Height) / 2),
+                  format);
+            }
+            else if (watermarktype == WatermarkType.Outline)
+            {
+                // Create a graphical path
+                XGraphicsPath path = new XGraphicsPath();
+
+                // Add the text to the path
+                path.AddString(watermarkstring, font.FontFamily, XFontStyle.BoldItalic, 150,
+                  new XPoint((page.Width - size.Width) / 2, (page.Height - size.Height) / 2),
+                  XStringFormats.Default);
+
+                // Create a dimmed red pen
+                XPen pen = new XPen(XColor.FromArgb(128, 255, 0, 0), 2);
+
+                // Stroke the outline of the path
+                gfx.DrawPath(pen, path);
+            }
+            else if (watermarktype == WatermarkType.Transparent)
+            {
+                // Create a graphical path
+                XGraphicsPath path = new XGraphicsPath();
+
+                // Add the text to the path
+                path.AddString(watermarkstring, font.FontFamily, XFontStyle.BoldItalic, 150,
+                  new XPoint((page.Width - size.Width) / 2, (page.Height - size.Height) / 2),
+                  XStringFormats.Default);
+
+                // Create a dimmed red pen and brush
+                XPen pen = new XPen(XColor.FromArgb(50, 75, 0, 130), 3);
+                XBrush brush = new XSolidBrush(XColor.FromArgb(50, 106, 90, 205));
+
+                // Stroke the outline of the path
+                gfx.DrawPath(pen, brush, path);
+            }
+            else
+            {
+                throw new NotSupportedException($"Type '{watermarktype}' is not supported.");
+            }
+
+            
+
+            return true;
+        }
+
+        /// <summary>
+        /// Add watermark to all pages in pdf document.
+        /// </summary>
+        /// <param name="infile">input pdf file</param>
+        /// <param name="outfile">output pdf file</param>
+        /// <param name="watermarkstring">watermark string</param>
+        /// <param name="watermarktype">type of watermark</param>
+        /// <param name="ranges">ranges to add watermark too</param>
+        /// <param name="tracker">this event will be called each time change in progress happens</param>
+        /// <returns>watermark was sucessful or not</returns>
+        public static async Task<bool> WatermarkPdfAsync(string infile, string outfile, string watermarkstring, WatermarkType watermarktype, PageRange[] ranges, PdfProgressHandler tracker)
+        {
+            CrashReporting.Log("WatermarkPdf", $"Parameters: ({infile}, {outfile}, {watermarkstring}, {watermarktype}, <{ranges?.Length}>, {tracker != null})");
+
+            //-------------------------------------------------------------------------------------//
+            //              Opening document and getting reading to perform op                     //
+            //-------------------------------------------------------------------------------------//
+
+            if (outfile != null)
+                outfile = Path.Combine(FileSystem.GetOtherPdfOutDir(), outfile);
+
+            // Open the file
+            PdfProgressEventArgs e_progress = new PdfProgressEventArgs();
+
+            CrashReporting.Log("WatermarkPdf", "Opening input pdf.");
+
+            PdfDocument doc;
+            try
+            {
+                doc = PdfReader.Open(infile, PdfDocumentOpenMode.Modify);
+            }
+            catch (PdfSharp.Pdf.IO.PdfReaderException ex)
+            {
+                CrashReporting.Log("WatermarkPdf", $"Exception while opening input pdf. (msg: {ex.Message})");
+                tracker?.Invoke(null, e_progress.Failed($"InternalError: {ex.Message}."));
+                return await Task.FromResult(false);
+            }
+            if (doc == null)
+            {
+                CrashReporting.Log("WatermarkPdf", "While opening input pdf doc retured <null>.");
+                tracker?.Invoke(null, e_progress.Failed($"Doc object <null>."));
+                return await Task.FromResult(false);
+            }
+
+            //-------------------------------------------------------------------------------------//
+            //              CHECK RANGES                                                           //
+            //-------------------------------------------------------------------------------------//
+
+            CrashReporting.Log("WatermarkPdf", "Checking ranges are greater than page count or invalid.");
+
+            e_progress.TotalPages = GetTotalPagesInRanges(ranges);
+            // are total ranges 0?
+            if (e_progress.TotalPages <= 0)
+            {
+                CrashReporting.Log("WatermarkPdf", "No pages to watermark.");
+                doc.Close();
+
+                e_progress.Failed("Failed because there are no pages to save.");
+                tracker?.Invoke(null, e_progress);
+                return await Task.FromResult(false);
+            }
+
+            //check ranges are not out of bound before remove pages begins
+            int pgcount = doc.PageCount;
+            
+            for (int i = 0; i < ranges.Length; i++)
+            {
+                int from_idx = ranges[i].From - 1;
+                int to_idx = ranges[i].To;
+
+                if (from_idx >= to_idx || to_idx > pgcount)
+                {
+                    doc.Close();
+                    e_progress.Failed($"Failed because range '{ranges[i]}' is not valid. Make sure ranges are valid. Note that the document page count is '{pgcount}'.");
+                    tracker?.Invoke(null, e_progress);
+                    return await Task.FromResult(false);
+                }
+            }
+            
+
+            CrashReporting.Log("WatermarkPdf-> In pdf removing pages loop.");
+            //-------------------------------------------------------------------------------------//
+            //              BEGIN ADDING WATERMARK TO PAGES                                        //
+            //-------------------------------------------------------------------------------------//
+
+            // start added watermark to pages...
+            for (int i = 0; i < ranges.Length; i++)
+            {
+
+                //get pages and add to watermark to it
+                int from_idx = ranges[i].From - 1;
+                int to_idx = ranges[i].To;
+
+                for (int idx = from_idx; idx < to_idx; idx++)
+                {
+                    await Task.Delay(1000);//delay for test....
+
+                    if (DrawWatermarkToPage(doc.Pages[i], watermarkstring, watermarktype) == false)
+                    {
+                        doc.Close();
+                        e_progress.Failed("Failed to add watermark to page.");
+                        tracker?.Invoke(null, e_progress);
+                        return await Task.FromResult(false);
+                    }
+
+                    e_progress.PagesDone++;
+                    e_progress.Progress = ((float)e_progress.PagesDone / (float)e_progress.TotalPages) * 100.0f;
+
+                    if (tracker != null)
+                    {
+                        if (tracker.Invoke(null, e_progress) == false)
+                        {
+                            doc.Close();
+                            e_progress.Failed("Failed because user exit.");
+                            tracker?.Invoke(null, e_progress);
+                            return await Task.FromResult(false);
+                        }
+                    }
+                }
+            }
+
+            //save document
+            CrashReporting.Log("WatermarkPdf", "Trying to save. (CanSave())");
+            string msg = null;
+            if (doc.CanSave(ref msg))
+            {
+                CrashReporting.Log("WatermarkPdf", "Saving generated pdf file.");
+                doc.Save(outfile);
+
+                e_progress.Sucess(e_progress.TotalPages);
+                tracker?.Invoke(null, e_progress);
+                return await Task.FromResult(true);
+            }
+
+            CrashReporting.Log("WatermarkPdf", $"Failed to save. (msg from CanSave(): {msg}).");
+            doc.Close();
+
+            e_progress.Failed($"InternalError: {msg}");
+            tracker?.Invoke(null, e_progress);
+            return await Task.FromResult(false);
+        }
+
+        /// <summary>
+        /// Generate Pdf document from images.
+        /// </summary>
+        /// <param name="infile">image files</param>
+        /// <param name="outfile">output pdf file</param>
+        /// <param name="tracker">this event will be called each time change in progress happens</param>
+        /// <returns>pdf generated from images was sucessful or not</returns>
+        public static async Task<bool> ImagesToPdfAsync(string[] infile, string outfile, PdfProgressHandler tracker)
+        {
+            CrashReporting.Log("ImagesToPdf", $"Parameters: ({infile?.Length}, {outfile}, {tracker != null})");
+
+            //-------------------------------------------------------------------------------------//
+            //              Opening document and getting reading to perform op                     //
+            //-------------------------------------------------------------------------------------//
+
+            if (outfile != null)
+                outfile = Path.Combine(FileSystem.GetOtherPdfOutDir(), outfile);
+
+            // Open the file
+            PdfProgressEventArgs e_progress = new PdfProgressEventArgs();
+            
+            CrashReporting.Log("ImagesToPdf", "Checking images.");
+
+            if (infile == null || infile.Length <= 0)
+            {
+                CrashReporting.Log("ImagesToPdf", "Can't find images.");
+                tracker?.Invoke(null, e_progress.Failed("Can't find images."));
+                return await Task.FromResult(false);
+            }
+            e_progress.TotalPages = infile.Length;
+
+            //-------------------------------------------------------------------------------------//
+            //              Images to pdf loop                                                     //
+            //-------------------------------------------------------------------------------------//
+
+            CrashReporting.Log("ImagesToPdf", "In image to pdf loop.");
+            PdfDocument doc = new PdfDocument();
+            foreach(string img in infile)
+            {
+                if(XImage.ExistsFile(img) == false)
+                {
+                    tracker?.Invoke(null, e_progress.Failed("Can't find images."));
+                    return await Task.FromResult(false);
+                }
+                XImage ximg = XImage.FromFile(img);
+                //PdfPage page = new PdfPage();
+
+                PdfPage page = doc.AddPage();
+
+                XGraphics gfx = XGraphics.FromPdfPage(page);
+                gfx.DrawImage(ximg, 0, 0);
+
+                e_progress.PagesDone++;
+                e_progress.Progress = ((float)e_progress.PagesDone / (float)e_progress.TotalPages) * 100.0f;
+
+                if (tracker != null)
+                {
+                    if(tracker.Invoke(null, e_progress) == false)
+                    {
+                        tracker?.Invoke(null, e_progress.Failed("Failed because user exit."));
+                        return await Task.FromResult(false);
+                    }
+                }
+            }
+
+            CrashReporting.Log("ImagesToPdf", "Trying to save.");
+            string msg = null;
+            if(doc.CanSave(ref msg))
+            {
+                doc.Save(outfile);
+                doc.Close();
+
+                tracker?.Invoke(null, e_progress.Sucess(e_progress.TotalPages));
+                return await Task.FromResult(true);
+            }
+
+            CrashReporting.Log("ImagesToPdf", $"Failed to save. (msg: {msg})");
+            tracker?.Invoke(null, e_progress.Failed(msg));
+            return await Task.FromResult(false);
+        }
+
+        public class PdfInfo
+        {
+            public string FullPath { get; private set; }
+            public string Title { get; set; }
+            public string Author { get; set; }
+            public string Subject { get; set; }
+            public string Keywords { get; set; }
+            public string Creator { get; set; }
+            public string Producer { get; private set; }
+            public DateTime CreationDate { get; private set; }
+            public DateTime ModificationDate { get; private set; }
+
+            public PdfCustomValues CustomValues { get; set; }
+
+            public void Set(string fullpath, PdfDocumentInformation info, PdfCustomValues customvalues)
+            {
+                this.FullPath = fullpath;
+                this.CustomValues = customvalues;
+                if(info != null)
+                {
+                    this.Title = info.Title;
+                    this.Author = info.Author;
+                    this.Subject = info.Subject;
+                    this.Keywords = info.Keywords;
+                    this.Creator = info.Creator;
+                    this.Producer = info.Producer;
+                    this.CreationDate = info.CreationDate;
+                    this.ModificationDate = info.ModificationDate;
+                }
+            }
+
+            public override string ToString()
+            {
+                return $"(PdfInfo: {FullPath}, {Title})";
+            }
+        }
+
+        /// <summary>
+        /// Read and/or write pdf information.
+        /// </summary>
+        /// <param name="infile">image files</param>
+        /// <param name="outfile">output pdf file</param>
+        /// <param name="read">info which will be read from document. (null incase only write)</param>
+        /// <param name="write">info which will be written to document and saved at outfile location. (null incase only read)</param>
+        /// <param name="tracker">this event will be called each time change in progress happens</param>
+        /// <returns>pdf info read/written sucessful or not</returns>
+        public static async Task<bool> ModifyPdfInfoAsync(string infile, string outfile, PdfInfo read, PdfInfo write, PdfProgressHandler tracker)
+        {
+            CrashReporting.Log("ModifyPdfInfo", $"Parameters: ({infile}, {outfile}, {read}, {write}, {tracker != null})");
+
+            //-------------------------------------------------------------------------------------//
+            //              Opening document and getting reading to perform op                     //
+            //-------------------------------------------------------------------------------------//
+
+            if (outfile != null)
+                outfile = Path.Combine(FileSystem.GetOtherPdfOutDir(), outfile);
+
+            // Open the file
+            PdfProgressEventArgs e_progress = new PdfProgressEventArgs();
+
+            CrashReporting.Log("ModifyPdfInfo", "Opening input document.");
+
+            if (read == null && write == null)
+            {
+                tracker?.Invoke(null, e_progress.Failed("Both read and write info can't be null."));
+                return await Task.FromResult(false);
+            }
+
+            PdfDocument doc;
+            try
+            {
+                doc = PdfReader.Open(infile, PdfDocumentOpenMode.Modify);
+            }
+            catch (PdfSharp.Pdf.IO.PdfReaderException ex)
+            {
+                CrashReporting.Log("ModifyPdfInfo", $"Exception while opening input pdf. (msg: {ex.Message})");
+                tracker?.Invoke(null, e_progress.Failed(ex.Message));
+                return await Task.FromResult(false);
+            }
+            if (doc == null)
+            {
+                CrashReporting.Log("ModifyPdfInfo", "While opening input pdf doc retured <null>.");
+                tracker?.Invoke(null, e_progress.Failed("Doc object <null>."));
+                return await Task.FromResult(false);
+            }
+
+
+            //-------------------------------------------------------------------------------------//
+            //              Images to pdf loop                                                     //
+            //-------------------------------------------------------------------------------------//
+
+            CrashReporting.Log("ModifyPdfInfo", "Read/Write Info");
+            
+            if(read != null)
+            {
+                read.Set(doc.FullPath, doc.Info, doc.CustomValues);
+            }
+
+            if(write != null)
+            {
+                //write info to doc object
+                doc.Info.Title = write.Title;
+                doc.Info.Author = write.Author;
+                doc.Info.Subject = write.Subject;
+                doc.Info.Keywords = write.Keywords;
+                doc.Info.Creator = write.Creator;
+                //doc.Info.CreationDate = write.CreationDate;
+                //doc.Info.ModificationDate = write.ModificationDate;
+
+                doc.CustomValues = write.CustomValues;
+
+                CrashReporting.Log("ModifyPdfInfo", "Trying to save.");
+                string msg = null;
+                if (!doc.CanSave(ref msg))
+                {
+                    doc.Close();
+                    CrashReporting.Log("ModifyPdfInfo", $"Failed to save. (msg: {msg})");
+                    tracker?.Invoke(null, e_progress.Failed(msg));
+                    return await Task.FromResult(false);
+                }
+
+                doc.Save(outfile);
+                doc.Close();
+            }
+
+            tracker?.Invoke(null, e_progress.SucessNoPages());
+            return await Task.FromResult(true);
+        }
+
+        public static async Task<bool> ReadPdfInfoAsync(string infile, PdfInfo read, PdfProgressHandler tracker) => await ModifyPdfInfoAsync(infile, null, read, null, tracker);
+        public static async Task<bool> WritePdfInfoAsync(string infile, string outfile, PdfInfo write, PdfProgressHandler tracker) => await ModifyPdfInfoAsync(infile, outfile, null, write, tracker);
     }
 }

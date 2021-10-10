@@ -13,6 +13,7 @@
     <None Remove="Resources\Images\tool_lock.png" />
     <None Remove="Resources\Images\tool_merge.png" />
     <None Remove="Resources\Images\tool_remove.png" />
+    <None Remove="Resources\Images\tool_rotate.png" />
     <None Remove="Resources\Images\tool_savedpdfs.png" />
     <None Remove="Resources\Images\tool_split.png" />
     <None Remove="Resources\Images\tool_unlock.png" />
@@ -28,6 +29,7 @@
     <EmbeddedResource Include="Resources\Images\tool_lock.png" />
     <EmbeddedResource Include="Resources\Images\tool_merge.png" />
     <EmbeddedResource Include="Resources\Images\tool_remove.png" />
+    <EmbeddedResource Include="Resources\Images\tool_rotate.png" />
     <EmbeddedResource Include="Resources\Images\tool_savedpdfs.png" />
     <EmbeddedResource Include="Resources\Images\tool_split.png" />
     <EmbeddedResource Include="Resources\Images\tool_unlock.png" />
@@ -71,10 +73,16 @@
     <EmbeddedResource Update="Views\PdfTaskExecutorPopup.xaml">
       <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
     </EmbeddedResource>
+    <EmbeddedResource Update="Views\ToolLockUnlockPdfPage.xaml">
+      <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
+    </EmbeddedResource>
     <EmbeddedResource Update="Views\ToolMergePage.xaml">
       <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
     </EmbeddedResource>
     <EmbeddedResource Update="Views\ToolSplitPage.xaml">
+      <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Views\ToolViewPdfInfoPage.xaml">
       <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
     </EmbeddedResource>
   </ItemGroup>

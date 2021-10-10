@@ -4,33 +4,26 @@ using System.Collections.ObjectModel;
 using System.Text;
 using Xamarin.Forms;
 using System.Linq;
+using PDF_ToolBox.Models;
 
 namespace PDF_ToolBox.ViewModels
 {
+    [QueryProperty(nameof(PageType), nameof(PageType))]
     class ToolMergeViewModel : BaseViewModel
     {
-        public class MergeItem
-        {
-            public string Id { get; private set; }
-            public string FileName { get; private set; }
-            public string FilePath { get; private set; }
+        public const string TypeMerge = "split";
+        public const string TypeImagesToPdf = "imagestopdf";
 
-            public MergeItem(string name, string path)
+        private string _pageType = TypeMerge;
+        public string PageType
+        {
+            get => this._pageType;
+            set
             {
-                this.Id = Guid.NewGuid().ToString();
-                this.FilePath = path;
-                this.FileName = name;
-            }
-            public MergeItem(Xamarin.Essentials.FileResult file)
-            {
-                this.Id = Guid.NewGuid().ToString();
-                this.FilePath = file.FullPath;
-                this.FileName = file.FileName;
+                this._pageType = value;
             }
         }
-        private readonly string pdf_merge_dir = PDF.FileSystem.GetMergePdfOutDir();
-
-
+        
         private string _out_pdf;
         public string OutputPdfFile
         {
@@ -41,8 +34,9 @@ namespace PDF_ToolBox.ViewModels
         public ObservableCollection<MergeItem> Items { get; }
 
 
-        public Command MergeItemsCommand { get; }
+        public Command StartPdfCommand { get; }
         public Command AddItemCommand { get; }
+        public Command AddMultipleItemsCommand { get; }
         public Command<MergeItem> ItemTapped { get; }
 
         public ToolMergeViewModel()
@@ -51,19 +45,32 @@ namespace PDF_ToolBox.ViewModels
 
             this.ItemTapped = new Command<MergeItem>(OnItemSelected);
 
-            this.AddItemCommand = new Command(OnAddItem);
-            this.MergeItemsCommand = new Command(OnMergeItem);
+            this.AddItemCommand = new Command(OnAddItemClicked);
+            this.AddMultipleItemsCommand = new Command(OnAddMultipleItemsClicked);
+            this.StartPdfCommand = new Command(OnStartPdfClicked);
             
         }
-
-        private async void OnAddItem()
+        public void OnAppearing()
         {
-            var files = await PDF.FileSystem.PickAndShowMultiAsync();
+            if (this.PageType == ToolMergeViewModel.TypeMerge)
+            {
+                this.Title = "Merge PDF";
+            }
+            else if (this.PageType == ToolMergeViewModel.TypeImagesToPdf)
+            {
+                this.Title = "Images To PDF";
+            }
+        }
+
+        private async void OnAddItemClicked()
+        {
+            var files = this.PageType == ToolMergeViewModel.TypeMerge ? await PDF.FileSystem.PickAndShowPdfMultiAsync() : await PDF.FileSystem.PickAndShowJpegMultiAsync();
+
             if(files != null)
             {
                 foreach (var f in files)
                 {
-                    if (PDF.ToolHelper.IsValidPdfFile(f.FullPath))
+                    if (this.PageType == ToolMergeViewModel.TypeMerge ? PDF.ToolHelper.IsValidPdfFile(f.FullPath) : PDF.ToolHelper.IsValidImageFile(f.FullPath))
                     {
                         this.Items.Add(new MergeItem(f));
                     }
@@ -74,21 +81,24 @@ namespace PDF_ToolBox.ViewModels
                 }
             }
         }
-        private bool CheckIfMergeOutPdfAlreadyExists(string outpdf)
+        private async void OnAddMultipleItemsClicked()
         {
-            foreach (var m in PDF.FileSystem.GetAllMergePdfFiles())
+        }
+        private bool CheckIfOutPdfAlreadyExists(string outpdf)
+        {
+            foreach (var m in this.PageType == TypeMerge ? PDF.FileSystem.GetAllMergePdfFiles() : PDF.FileSystem.GetAllOtherPdfFiles())
             {
-                if(m.Id == outpdf)
+                if(m.FileName == outpdf)
                 {
                     return true;
                 }
             }
             return false;
         }
-        private async void OnMergeItem()
+        private async void OnStartPdfClicked()
         {
             //check params and return after reporting
-            if(this.Items.Count < 1)
+            if(this.PageType == ToolMergeViewModel.TypeMerge && this.Items.Count < 1)
             {
                 await Views.MessagePopup.ShowAsync("Error", "Need at least 2 pdfs to merge.", "OK");
                 return;
@@ -103,7 +113,7 @@ namespace PDF_ToolBox.ViewModels
 
             //check out file has .pdf extension if not append it.
             //setup all the args....
-            string outfile = System.IO.Path.Combine(this.pdf_merge_dir, this.OutputPdfFile);
+            string outfile = this.OutputPdfFile;
             string extension = System.IO.Path.GetExtension(outfile);
 
             if (string.IsNullOrWhiteSpace(extension) || extension.Equals(".pdf", StringComparison.CurrentCultureIgnoreCase) == false)
@@ -111,10 +121,26 @@ namespace PDF_ToolBox.ViewModels
                 outfile += ".pdf";
             }
 
-            var executor = PDF.PdfTaskExecutor.DoTaskMergePdf(this.Items.Select(x => { return x.FilePath; }).ToArray(), outfile);
+            string[] infiles = this.Items.Select(x => { return x.FilePath; }).ToArray();
+            
+            PDF.PdfTaskExecutor executor = null;
 
-            //merge docs.....
-            if (this.CheckIfMergeOutPdfAlreadyExists(outfile))
+
+            if (this.PageType == ToolMergeViewModel.TypeMerge)
+            {
+                executor = PDF.PdfTaskExecutor.DoTaskMergePdf(infiles, outfile);
+            }
+            else if(this.PageType == ToolMergeViewModel.TypeImagesToPdf)
+            {
+                executor = PDF.PdfTaskExecutor.DoTaskImagesToPdf(infiles, outfile);
+            }
+            else
+            {
+                throw new NotImplementedException($"Type {this.PageType} is not implemented.");
+            }
+
+            //merge docs/images.....
+            if (this.CheckIfOutPdfAlreadyExists(outfile))
             {
                 await Views.MessagePopup.ShowAsync("Overwrite",
                     "It seems like output file with the same name already exists.\nDo you want to overwrite?", "Cancel", "Yes", null,
@@ -136,7 +162,7 @@ namespace PDF_ToolBox.ViewModels
         {
             if(item != null)
             {
-                await Views.MessagePopup.ShowAsync(item.FileName, $"Do you want to remove '{item.FileName}' from merge list?", "No", "Yes", this, 
+                await Views.MessagePopup.ShowAsync(item.FileName, $"Do you want to remove '{item.FileName}' from list?", "No", "Yes", this, 
                     (sender, e) => 
                     {
                         Views.MessagePopup msg = (Views.MessagePopup)sender;

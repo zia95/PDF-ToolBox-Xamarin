@@ -7,30 +7,30 @@ using System.Threading.Tasks;
 using Xamarin.Forms;
 using Xamarin.Forms.Xaml;
 
-using PDF_ToolBox.ViewModels;
-
 namespace PDF_ToolBox.Views
 {
     [XamlCompilation(XamlCompilationOptions.Compile)]
-    public partial class ToolMergePage : ContentPage
+    public partial class ToolLockUnlockPdfPage : ContentPage
     {
-        private ToolMergeViewModel _viewmodel = null;
-        public ToolMergePage()
+        PDF_ToolBox.ViewModels.ToolLockUnlockPdfViewModel _viewmodel = null;
+        public ToolLockUnlockPdfPage()
         {
             InitializeComponent();
 
-            BindingContext = _viewmodel = new ToolMergeViewModel();
+            this.BindingContext = _viewmodel = new ViewModels.ToolLockUnlockPdfViewModel();
         }
+
         protected override void OnAppearing()
         {
             base.OnAppearing();
-            Misc.CrashReporting.Log("ToolMergePage->OnAppearing()");
-            _viewmodel.OnAppearing();
+            Misc.CrashReporting.Log("ToolLockUnlockPdfViewModel->OnAppearing()");
+
+            this._viewmodel.OnAppearing();
         }
         protected override void OnDisappearing()
         {
             base.OnDisappearing();
-            Misc.CrashReporting.Log("ToolMergePage->OnDisappearing()");
+            Misc.CrashReporting.Log("ToolLockUnlockPdfViewModel->OnDisappearing()");
         }
     }
 }

@@ -15,6 +15,9 @@ namespace PDF_ToolBox
             Routing.RegisterRoute(nameof(ToolSplitPage), typeof(ToolSplitPage));
             Routing.RegisterRoute(nameof(ToolMergePage), typeof(ToolMergePage));
 
+            Routing.RegisterRoute(nameof(ToolLockUnlockPdfPage), typeof(ToolLockUnlockPdfPage));
+            Routing.RegisterRoute(nameof(ToolViewPdfInfoPage), typeof(ToolViewPdfInfoPage));
+
 
             Routing.RegisterRoute(nameof(GeneratedPdfListPage), typeof(GeneratedPdfListPage));
         }

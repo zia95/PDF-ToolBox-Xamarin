@@ -7,6 +7,7 @@ using System.Diagnostics;
 using Xamarin.Forms;
 using Xamarin.Essentials;
 using System.Threading.Tasks;
+using System.Linq;
 
 using PDF_ToolBox.Models;
 
@@ -20,12 +21,15 @@ namespace PDF_ToolBox.ViewModels
         public const string TypeRemove = "remove";
         public const string TypeMerge = "merge";
         public const string TypeSecurity = "security";
+        public const string TypeWatermark = "watermark";
+        public const string TypeImagesToPdf = "imagestopdf";
+        public const string TypeViewPdfInfo = "viewinfo";
 
         public const string TypeOther = "other";//other = 'not split' and 'not merge'
 
         private const string DefaultPageType = TypeMerge;
 
-        private string _pageType;
+        private string _pageType = DefaultPageType;
         public string PageType
         {
             get => this._pageType;
@@ -81,15 +85,11 @@ namespace PDF_ToolBox.ViewModels
             {
                 Items.Clear();
                 this._itmcolor = Color.LightBlue;
-                var items = await GeneratedPdfsDataStore.GetItemsAsync(true);
-
-                if (this.PageType != TypeSplit && this.PageType != TypeRemove && this.PageType != TypeMerge && this.PageType != TypeSecurity && this.PageType != TypeOther)
-                    this.PageType = DefaultPageType;
-
-
+                var items_enum = await GeneratedPdfsDataStore.GetItemsAsync(true);
+                
                 int itm_to_scroll_to = -1;
 
-                foreach (var item in items)
+                foreach (var item in items_enum)
                 {
                     this._itmcolor = this._itmcolor == Color.LightBlue ? Color.White : Color.LightBlue;
 
@@ -121,17 +121,14 @@ namespace PDF_ToolBox.ViewModels
 
                         if (item.Id == this.PdfFile) itm_to_scroll_to = Items.Count - 1;
                     }
-                    else if(this.PageType != TypeMerge && this.PageType != TypeSplit)
+                    else if(
+                        this.PageType != TypeMerge && this.PageType != TypeSplit && 
+                        item.PdfType != TypeMerge && item.PdfType != TypeSplit)
                     {
-                        if(item.PdfType == TypeOther ||
-                           item.PdfType == TypeSecurity || 
-                           item.PdfType == TypeRemove)
-                        {
-                            item.ItemColor = this._itmcolor;
-                            Items.Add(item);
+                        item.ItemColor = this._itmcolor;
+                        Items.Add(item);
 
-                            if (item.Id == this.PdfFile) itm_to_scroll_to = Items.Count - 1;
-                        }
+                        if (item.Id == this.PdfFile) itm_to_scroll_to = Items.Count - 1;
                     }
                 }
                 if(itm_to_scroll_to != -1) 

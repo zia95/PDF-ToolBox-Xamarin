@@ -1,0 +1,26 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="PDF_ToolBox.Views.ToolLockUnlockPdfPage"
+             xmlns:local="clr-namespace:PDF_ToolBox.ViewModels"  
+             xmlns:model="clr-namespace:PDF_ToolBox.Models" 
+             x:DataType="local:ToolLockUnlockPdfViewModel"
+             Title="{Binding Title}">
+    <ContentPage.Content>
+        <ScrollView VerticalScrollBarVisibility="Default" >
+            <StackLayout Padding="10">
+                <!--Document entry ui-->
+                <Entry Text="{Binding OutputPdfFile}" Placeholder="Output Name" HorizontalOptions="FillAndExpand" FontSize="Medium" />
+
+                <Button Text="Select PDF File" HorizontalOptions="FillAndExpand" Command="{Binding SelectPdfCommand}" />
+                <Label Text="{Binding PdfFile}" HorizontalOptions="CenterAndExpand" TextColor="Blue" FontAttributes="Bold" />
+
+                <!-- lock/unlock ui-->
+                <Entry Placeholder="Password" Text="{Binding Password}" HorizontalOptions="FillAndExpand" FontSize="Medium" />
+                
+                <!--Start UI-->
+                <Button Text="Begin" HorizontalOptions="FillAndExpand" Command="{Binding StartPdfCommand}" />
+            </StackLayout>
+        </ScrollView>
+    </ContentPage.Content>
+</ContentPage>

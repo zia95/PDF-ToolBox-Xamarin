@@ -11,12 +11,13 @@ namespace PDF_ToolBox.ViewModels
     [QueryProperty(nameof(PageType), nameof(PageType))]
     class ToolSplitViewModel : BaseViewModel
     {
+        //page type...............
         public const string TypeSplit = "split";
         public const string TypeRemove = "remove";
-
+        public const string TypeWatermark = "watermark";
 
         public Command SelectPdfCommand { get; }
-        public Command SplitRemovePdfCommand { get; }
+        public Command StartPdfCommand { get; }
 
         private string _pageType = TypeSplit;
         public string PageType
@@ -28,6 +29,7 @@ namespace PDF_ToolBox.ViewModels
             }
         }
 
+        //pdf input... output...............
         private string _pdf_file;
         public string PdfFile
         {
@@ -42,6 +44,7 @@ namespace PDF_ToolBox.ViewModels
             set => SetProperty(ref _out_pdf, value);
         }
 
+        //pdf ranges.......
         private string _page_ranges;
         public string PageRanges
         {
@@ -50,35 +53,64 @@ namespace PDF_ToolBox.ViewModels
         }
 
         private bool _merge_ranges_into_one = true;
-        public bool MergeRangesIntoOne
-        {
-            get => _merge_ranges_into_one;
-            set => SetProperty(ref _merge_ranges_into_one, value);
-        }
+        public bool MergeRangesIntoOne { get => _merge_ranges_into_one; set => SetProperty(ref _merge_ranges_into_one, value); }
 
         private bool _showmerge = false;
-        public bool ShowMergeRanges { get => _showmerge; set { _showmerge = value; OnPropertyChanged(nameof(this.ShowMergeRanges)); } }
+        public bool ShowMergeRanges { get => _showmerge; set { _showmerge = value; SetProperty(ref _showmerge, value); } }
 
 
 
+        private bool _showwatermarkoptions = false;
+        public bool ShowWatermarkOptions { get => _showwatermarkoptions; set => SetProperty(ref _showwatermarkoptions, value); }
+
+        private string _watermarktext;
+        public string WatermarkText { get => _watermarktext; set => SetProperty(ref _watermarktext, value); }
+
+        private int _watermarktype;
+        public int WatermarkType { get => _watermarktype; set => SetProperty(ref _watermarktype, value); }
 
         public ToolSplitViewModel()
         {
             this.SelectPdfCommand = new Command(OnSelectPdfClicked);
             this.PdfFile = "No Pdf File Selected.";
 
-            this.SplitRemovePdfCommand = new Command(OnSplitRemovePdfClicked);
+            this.StartPdfCommand = new Command(OnStartPdfClicked);
 
             
         }
 
         public void OnAppearing()
         {
-            this.Title = this.PageType == ToolSplitViewModel.TypeSplit ? "Split PDF" : "Remove Pages";
-            this.ShowMergeRanges = this.PageType == ToolSplitViewModel.TypeSplit;
-
-            if (this.ShowMergeRanges == false)
+            if(this.PageType == ToolSplitViewModel.TypeSplit)
+            {
+                this.Title = "Split PDF";
+                this.ShowMergeRanges = true;
                 this.MergeRangesIntoOne = true;
+
+                this.WatermarkText = "";
+                this.ShowWatermarkOptions = false;
+                this.WatermarkType = 0;
+            }
+            else if (this.PageType == ToolSplitViewModel.TypeRemove)
+            {
+                this.Title = "Remove Pages";
+                this.ShowMergeRanges = false;
+                this.MergeRangesIntoOne = true;
+
+                this.WatermarkText = "";
+                this.ShowWatermarkOptions = false;
+                this.WatermarkType = 0;
+            }
+            else if (this.PageType == ToolSplitViewModel.TypeWatermark)
+            {
+                this.Title = "Watermark Pages";
+                this.ShowMergeRanges = false;
+                this.MergeRangesIntoOne = true;
+
+                this.WatermarkText = "";
+                this.ShowWatermarkOptions = true;
+                this.WatermarkType = 0;
+            }
         }
 
         private async void OnSelectPdfClicked()
@@ -97,7 +129,6 @@ namespace PDF_ToolBox.ViewModels
                     await Views.MessagePopup.ShowAsync("Failed", $"Your document is not a valid pdf file or its not supported.", "OK");
                 }
             }
-            
         }
 
         private bool CheckIfOutPdfAlreadyExists(string outpdf)
@@ -113,7 +144,7 @@ namespace PDF_ToolBox.ViewModels
         }
 
 
-        private async void OnSplitRemovePdfClicked()
+        private async void OnStartPdfClicked()
         {
             //check all data.... if incorrect return after reporting...
             if (string.IsNullOrWhiteSpace(this.OutputPdfFile))
@@ -131,7 +162,7 @@ namespace PDF_ToolBox.ViewModels
             var e_ranges = PDF.ToolHelper.ParseRanges(this.PageRanges);
             if(e_ranges == null || e_ranges.Count() <= 0)
             {
-                await Views.MessagePopup.ShowAsync("Failed", $"Failed to parse the ranges", "OK");
+                await Views.MessagePopup.ShowAsync("Failed", "Failed to parse the ranges", "OK");
                 return;
             }
 
@@ -150,6 +181,13 @@ namespace PDF_ToolBox.ViewModels
                 }
             }
 
+            //check watermark text
+            if(this.ShowWatermarkOptions && string.IsNullOrWhiteSpace(this.WatermarkText))
+            {
+                await Views.MessagePopup.ShowAsync("Failed", "Enter watermark text", "OK");
+                return;
+            }
+
 
             //split/removepages pdf file
 
@@ -163,6 +201,10 @@ namespace PDF_ToolBox.ViewModels
             else if (this.PageType == ToolSplitViewModel.TypeRemove)
             {
                 executor = PDF.PdfTaskExecutor.DoTaskRemovePagesFromPdf(this.PdfFile, outfile, ranges);
+            }
+            else if (this.PageType == ToolSplitViewModel.TypeWatermark)
+            {
+                executor = PDF.PdfTaskExecutor.DoTaskWatermarkPagesFromPdf(this.PdfFile, outfile, this.WatermarkText, (PDF.ToolHelper.WatermarkType)this.WatermarkType, ranges);
             }
             else
             {

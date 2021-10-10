@@ -16,6 +16,7 @@ namespace PDF_ToolBox.Models
             Compress,
             ImagesToPdf,
             ViewInformation,
+            RotatePage,
         }
         public Ids Id { get; set; }
         public Xamarin.Forms.ImageSource Image { get; set; }

@@ -3,10 +3,9 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="PDF_ToolBox.Views.ToolMergePage"
              xmlns:local="clr-namespace:PDF_ToolBox.ViewModels"  
-             Title="Merge PDF">
-    <ContentPage.BindingContext>
-        <local:ToolMergeViewModel/>
-    </ContentPage.BindingContext>
+             xmlns:model="clr-namespace:PDF_ToolBox.Models"  
+             x:DataType="local:ToolMergeViewModel"
+             Title="{Binding Title}">
     <ContentPage.Content>
 
         <ScrollView VerticalScrollBarVisibility="Default">
@@ -14,14 +13,15 @@
 
                 <Entry Text="{Binding OutputPdfFile}" Placeholder="Output Pdf File Name" HorizontalOptions="FillAndExpand" />
 
-                <Button Text="Select PDF File" Command="{Binding AddItemCommand}" HorizontalOptions="FillAndExpand" />
+                <Button Text="Add File" Command="{Binding AddItemCommand}" HorizontalOptions="FillAndExpand" />
+                <Button Text="Add File(s) from Directory" Command="{Binding AddItemCommand}" CommandParameter="True" HorizontalOptions="FillAndExpand" />
 
                 <Label Text="Files:" HorizontalOptions="StartAndExpand" FontAttributes="Bold" FontSize="Medium" />
 
                 <CollectionView x:Name="ItemsListView" ItemsSource="{Binding Items}" HeightRequest="200" SelectionMode="None">
                     <CollectionView.ItemTemplate>
                         <DataTemplate>
-                            <StackLayout Padding="10" Orientation="Horizontal">
+                            <StackLayout Padding="10" Orientation="Horizontal" x:DataType="model:MergeItem">
                                 <Label Text="{Binding FileName}" LineBreakMode="NoWrap" FontSize="Medium" FontAttributes="Bold" TextColor="CadetBlue" />
 
                                 <StackLayout.GestureRecognizers>
@@ -35,7 +35,7 @@
                     </CollectionView.ItemTemplate>
                 </CollectionView>
 
-                <Button Text="Merge PDF" Command="{Binding MergeItemsCommand}" HorizontalOptions="FillAndExpand" />
+                <Button Text="Begin" Command="{Binding StartPdfCommand}" HorizontalOptions="FillAndExpand" />
             </StackLayout>
         </ScrollView>
         

@@ -12,7 +12,7 @@
         <Label Text="{Binding Message}" FontSize="Medium" />
         <StackLayout Orientation="Horizontal">
             <Button Text="{Binding Cancel}" Clicked="OnCancelClicked" BackgroundColor="Red" HorizontalOptions="StartAndExpand" />
-            <Button Text="{Binding Accept}" IsVisible="{Binding ShowAccept}" x:Name="btn_accept" HorizontalOptions="EndAndExpand" Clicked="OnAcceptClicked" />
+            <Button Text="{Binding Accept}" IsVisible="{Binding ShowAccept}" HorizontalOptions="EndAndExpand" Clicked="OnAcceptClicked" />
         </StackLayout>
         
     </StackLayout>

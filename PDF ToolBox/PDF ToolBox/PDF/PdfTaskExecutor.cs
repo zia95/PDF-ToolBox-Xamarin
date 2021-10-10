@@ -16,7 +16,11 @@ namespace PDF_ToolBox.PDF
         public string Password { get; private set; }
         public bool LockOrUnlock { get; private set; }
 
+        public string WatermarkText { get; private set; }
+        public ToolHelper.WatermarkType WatermarkType { get; private set; }
+
         public string TaskType { get; set; }
+
 
 
         private PdfTaskExecutor() { }
@@ -27,6 +31,14 @@ namespace PDF_ToolBox.PDF
             exe.InputFiles = infiles;
             exe.OutputFile = outfile;
             exe.TaskType = ViewModels.GeneratedPdfListViewModel.TypeMerge;
+            return exe;
+        }
+        public static PdfTaskExecutor DoTaskImagesToPdf(string[] infiles, string outfile)
+        {
+            PdfTaskExecutor exe = new PdfTaskExecutor();
+            exe.InputFiles = infiles;
+            exe.OutputFile = outfile;
+            exe.TaskType = ViewModels.GeneratedPdfListViewModel.TypeImagesToPdf;
             return exe;
         }
         public static PdfTaskExecutor DoTaskLockOrUnlockPdf(string infile, string outfile, string password, bool lockOrUnlock)
@@ -60,6 +72,18 @@ namespace PDF_ToolBox.PDF
             exe.TaskType = ViewModels.GeneratedPdfListViewModel.TypeRemove;
             return exe;
         }
+        public static PdfTaskExecutor DoTaskWatermarkPagesFromPdf(string infile, string outfile, string watermarkstring, ToolHelper.WatermarkType watermarktype, ToolHelper.PageRange[] ranges)
+        {
+            PdfTaskExecutor exe = new PdfTaskExecutor();
+            exe.InputFiles = new string[] { infile };
+            exe.OutputFile = outfile;
+            exe.WatermarkText = watermarkstring;
+            exe.WatermarkType = watermarktype;
+            exe.MergeIntoOne = true;
+            exe.PageRanges = ranges;
+            exe.TaskType = ViewModels.GeneratedPdfListViewModel.TypeWatermark;
+            return exe;
+        }
 
 
 
@@ -70,13 +94,21 @@ namespace PDF_ToolBox.PDF
             {
                 return await ToolHelper.SplitPDFAsync(this.InputFiles[0], this.OutputFile, this.MergeIntoOne, this.PageRanges, tracker);
             }
-            if (TaskType == ViewModels.GeneratedPdfListViewModel.TypeRemove)
+            else if (TaskType == ViewModels.GeneratedPdfListViewModel.TypeRemove)
             {
                 return await ToolHelper.RemovePagesFromPDFAsync(this.InputFiles[0], this.OutputFile, this.PageRanges, tracker);
+            }
+            else if (TaskType == ViewModels.GeneratedPdfListViewModel.TypeWatermark)
+            {
+                return await ToolHelper.WatermarkPdfAsync(this.InputFiles[0], this.OutputFile, this.WatermarkText, this.WatermarkType, this.PageRanges, tracker);
             }
             else if(TaskType == ViewModels.GeneratedPdfListViewModel.TypeMerge)
             {
                 return await ToolHelper.MergePDFAsync(this.InputFiles, this.OutputFile, tracker);
+            }
+            else if (TaskType == ViewModels.GeneratedPdfListViewModel.TypeImagesToPdf)
+            {
+                return await ToolHelper.ImagesToPdfAsync(this.InputFiles, this.OutputFile, tracker);
             }
             else if(TaskType == ViewModels.GeneratedPdfListViewModel.TypeSecurity)
             {
